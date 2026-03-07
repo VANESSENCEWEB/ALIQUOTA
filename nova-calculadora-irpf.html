@@ -1,0 +1,2268 @@
+<!DOCTYPE html>
+<!--
+  ╔════════════════════════════════════════════════════════╗
+  ║  SIMULADOR IRPF 2025 — Vanessa Rafaella · UNICAP       ║
+  ║  Disciplina : Programação para Web  ·  Atividade: A01  ║
+  ╚════════════════════════════════════════════════════════╝
+
+  BOAS PRÁTICAS APLICADAS:
+  ✓ Design System com variáveis CSS (--color-*, --bg-*, etc.)
+  ✓ Mobile-First: CSS base = mobile, @media min-width expande
+  ✓ Responsivo: breakpoints 600 px (tablet) e 1024 px (desktop)
+  ✓ HTML5 semântico: <header> <main> <section> <footer> <button>
+  ✓ Acessibilidade WCAG: aria-label, aria-expanded, role, tabindex
+  ✓ Performance: preconnect, font-display swap, script no final
+  ✓ Animações via transform/opacity (GPU, sem recalcular layout)
+  ✓ Formulário acessível: <label>, aria-required, aria-describedby
+-->
+
+<!-- lang="pt-BR": informa ao Google e leitores de tela o idioma -->
+<html lang="pt-BR">
+<head>
+
+  <!-- ═══════════════════════════════════════════
+       META TAGS ESSENCIAIS — lidas ANTES de tudo
+       Não aparecem na página, configuram o browser
+       ═══════════════════════════════════════════ -->
+
+  <!--
+    charset UTF-8: sem isso letras acentuadas (ã ç é)
+    aparecem como símbolos estranhos. SEMPRE a primeira tag.
+  -->
+  <meta charset="UTF-8" />
+
+  <!--
+    viewport: instrução CRÍTICA para mobile.
+    width=device-width  → usa largura real do celular
+    initial-scale=1.0   → sem zoom inicial
+    Sem essa tag, mobile renderiza como desktop (980px)
+    e encolhe tudo — letras minúsculas e ilegíveis.
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- description: texto que o Google mostra nos resultados de busca -->
+  <meta name="description" content="Simulador IRPF 2025 — Cálculo mensal de Imposto de Renda. Projeto acadêmico UNICAP · Programação para Web · Vanessa Rafaella." />
+
+  <!-- title: aparece na aba do navegador e no Google -->
+  <title>Simulador IRPF 2025 — Vanessa Rafaella · UNICAP</title>
+
+  <!-- ═══════════════════════════════════════════
+       PERFORMANCE — FONTES DO GOOGLE
+       preconnect: abre a conexão com o servidor
+       ANTES de precisar dele. Economiza ~150ms.
+       crossorigin: obrigatório para fonts.gstatic
+       ═══════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!--
+    display=swap: mostra texto com fonte do sistema
+    enquanto Sora/IBM Plex Mono carregam.
+    Sem swap: texto fica INVISÍVEL por 2-3 segundos.
+    wght@...: carrega só os pesos usados (performance).
+  -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <!--
+    jsPDF: biblioteca para gerar PDF no browser.
+    CDN: servidor externo distribuído globalmente.
+    .min.js: versão minificada (menor = mais rápido).
+    Usuários que já visitaram outro site com o mesmo CDN
+    já têm o arquivo em cache — carrega instantâneo.
+  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+
+/* ═══════════════════════════════════════════════════════════
+   DESIGN SYSTEM — VARIÁVEIS CSS (:root)
+   ═══════════════════════════════════════════════════════════
+
+   :root = elemento raiz (<html>). Variáveis aqui valem em
+   TODO o CSS. Se quiser trocar uma cor, muda 1 linha aqui
+   e todo o site atualiza — não precisa buscar em 50 lugares.
+
+   Sintaxe OBRIGATÓRIA: --nome-da-variavel: valor;
+   Para usar em qualquer lugar: var(--nome-da-variavel)
+   ═══════════════════════════════════════════════════════════ */
+:root {
+
+  /* ── CORES DE MARCA (inspiradas na bandeira do Brasil) ── */
+  --color-brand-green-dark:  #1a7340;   /* verde escuro: texto, bordas ativas     */
+  --color-brand-green:       #2ecc71;   /* verde médio: progresso, sucesso         */
+  --color-brand-blue-dark:   #003082;   /* azul escuro: header, fundo de destaque  */
+  --color-brand-blue-soft:   #1a4ba0;   /* azul suave: hover de elementos azuis    */
+  --color-brand-gold:        #f5a623;   /* ouro: badges, destaques, h1 span        */
+ 
+  /* ── FOOTER COLORS ── */
+  --cyber-cyan: #00ffff;
+  --cyber-pink: #ff0080;
+  --cyber-purple: #8000ff;
+  --cyber-green: #00ff41;
+  --dark-bg: #0a0a0f;
+  --darker-bg: #050508;
+
+  /* ── BACKGROUNDS ── */
+  --bg-primary:  #eef2fb;   /* fundo geral da página (cinza-azulado claro)   */
+  --bg-white:    #ffffff;   /* fundo de cards e painéis                       */
+  --bg-green-light: #e8f5ee; /* fundo de cards verdes (educativos)             */
+  --bg-blue-light:  #eef2fb; /* fundo de cards azuis (informativos)            */
+  --bg-gold-light:  #fffbec; /* fundo de cards dourados (avisos)               */
+  --bg-gray-light:  #f4f6fb; /* fundo de cards neutros                         */
+
+  /* ── BORDAS ── */
+  --borda:          #d1dbe8;   /* borda padrão de cards e inputs               */
+  --borda-green:    #b2dfc4;   /* borda de elementos verdes                    */
+  --borda-blue:     #b8caf0;   /* borda de elementos azuis                     */
+  --borda-gold:     #ffe082;   /* borda de elementos dourados                  */
+
+  /* ── TEXTOS ── */
+  --color-text-primary:   #12213a;   /* texto principal (quase-preto azulado)  */
+  --color-text-secondary: #4a5878;   /* texto secundário (cinza médio)          */
+  --color-text-white:     #f4f6fb;   /* texto sobre fundos escuros              */
+  --color-text-muted:     #8a96b0;   /* texto discreto: placeholders, legendas  */
+
+  /* ── SOMBRAS ──
+     rgba(r, g, b, opacidade):
+     0-255 para cada canal de cor | 0.0-1.0 para opacidade
+     Sombras azuladas harmonizam com o tema. */
+  --shadow-sm: 0 2px 12px rgba(0,48,130,0.08);   /* card em repouso           */
+  --shadow-md: 0 6px 28px rgba(0,48,130,0.13);   /* card em hover             */
+  --shadow-lg: 0 8px 40px rgba(26,55,92, 0.10);  /* modais e elementos fixos  */
+
+  /* ── BORDER-RADIUS (arredondamento de cantos) ── */
+  --radius-sm: 8px;    /* botões, pills, badges                                */
+  --radius-md: 12px;   /* cards educativos, inputs, mini-cards                 */
+  --radius-lg: 16px;   /* cards principais, acordeões                          */
+
+  /* ── TRANSIÇÃO PADRÃO ──
+     all 0.24s = aplica em todas as propriedades que mudarem
+     cubic-bezier(.4,0,.2,1) = curva Google Material:
+     começa rápido, desacelera no final = movimento natural */
+  --tr: all 0.24s cubic-bezier(.4,0,.2,1);
+
+  /* ── TIPOGRAFIA ──
+     font-family definida aqui, aplicada no body.
+     Fallback: se Sora não carregar, usa sans-serif do sistema. */
+  --font-base:  'Sora', sans-serif;           /* todo o texto da UI             */
+  --font-mono:  'IBM Plex Mono', monospace;   /* números, valores, código       */
+
+  /* Escala de tamanhos de fonte */
+  --text-xs:  10px;   /* labels de campo, legendas de tabela                   */
+  --text-sm:  12px;   /* textos de apoio, notas de rodapé                      */
+  --text-md:  14px;   /* texto base da interface                               */
+  --text-lg:  16px;   /* subtítulos, labels importantes                        */
+  --text-xl:  20px;   /* resultados numéricos                                  */
+
+  /* Pesos de fonte */
+  --fw-normal:  400;
+  --fw-semi:    600;
+  --fw-bold:    700;
+  --fw-black:   800;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   RESET CSS — ZERO OS PADRÕES DO NAVEGADOR
+   ═══════════════════════════════════════════════════════════
+
+   Cada navegador (Chrome, Firefox, Safari) tem estilos padrão
+   DIFERENTES. Sem reset, h1 tem margens distintas em cada um.
+
+   * = aplica para TODOS os elementos
+   *::before, *::after = pseudo-elementos do CSS
+
+   box-sizing: border-box — o mais importante do reset:
+   SEM: width:200px + padding:20px = 240px (transborda!)
+   COM: width:200px + padding:20px = 200px (padding fica dentro)
+   Com border-box, o que você declara é o que você tem.
+   ═══════════════════════════════════════════════════════════ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* scroll-behavior: smooth → links âncora (#id) rolam suavemente */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ─── CORPO DA PÁGINA ───
+   font-family com fallback: se Sora falhar, usa sans-serif do sistema.
+   min-height: 100vh = pelo menos a altura toda da janela.           */
+body {
+  font-family: var(--font-base);
+  background: var(--bg-primary);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+  line-height: 1.6;   /* espaçamento entre linhas = legibilidade   */
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   FAIXA DECORATIVA — BRASIL
+   ═══════════════════════════════════════════════════════════
+   linear-gradient(90deg, ...): gradiente da esquerda para direita.
+   A repetição do % no mesmo valor cria transição abrupta (sem degradê).
+   Resultado: 3 faixas sólidas — verde | amarelo | azul.             */
+.faixa-brasil {
+  height: 6px;
+  background: linear-gradient(
+    90deg,
+    #009c3b 33.3%,       /* verde de 0% a 33.3%   */
+    #FFB400 33.3% 66.6%, /* amarelo de 33.3% a 66.6% */
+    #003082 66.6%        /* azul de 66.6% a 100%  */
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   HEADER — CABEÇALHO SEMÂNTICO
+   ═══════════════════════════════════════════════════════════
+   <header> = tag SEMÂNTICA. O Google e leitores de tela sabem
+   que isto é o cabeçalho da página (diferente de <div class="header">).
+
+   position: relative → necessário para posicionar os .deco filhos
+   overflow: hidden   → esconde as bolinhas que saem das bordas   */
+header {
+  background: linear-gradient(
+    160deg,                        /* 160deg = diagonal elegante    */
+    var(--color-brand-blue-dark) 0%,
+    #001a5e 100%
+  );
+  color: var(--color-text-white);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Círculos decorativos de fundo do header ──
+   position: absolute → saem do fluxo, flutuam sobre o header
+   border-radius: 50% → 50% = círculo perfeito
+   pointer-events: none → cliques passam por baixo, não interfere na UI
+   aria-hidden="true" no HTML → leitores de tela ignoram              */
+.deco {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgba(255,255,255, 0.04);
+}
+.deco.d1 { width: 320px; height: 320px; top: -100px;  right: -60px; }
+.deco.d2 { width: 180px; height: 180px; bottom: -60px; left: 40px;  }
+.deco.d3 {
+  width: 80px; height: 80px; top: 40px; left: 200px;
+  background: rgba(255,180,0, 0.07); /* levemente dourado */
+}
+
+/* ── Área interna do header ──
+   max-width + margin: 0 auto = centraliza o conteúdo
+   z-index: 1 → fica acima dos .deco (que têm z-index padrão 0) */
+.header-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 30px 24px 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Linha superior: logo + nome UNICAP + badges ──
+   display: flex = coloca filhos lado a lado
+   align-items: center = alinha todos no centro vertical
+   gap: espaçamento entre os filhos (mais simples que margin)   */
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+/* ── Logo / ícone da instituição ──
+   flex-shrink: 0 → não encolhe se o espaço apertar
+   justify-content: center → centraliza o emoji horizontalmente */
+.inst-logo {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  background: rgba(255,255,255, .12);
+  border: 1.5px solid rgba(255,255,255, .2);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;   /* ← estava faltando no seu código! */
+  font-size: 26px;
+}
+
+/* flex: 1 → ocupa todo o espaço restante entre logo e badges */
+.inst-info { flex: 1; }
+
+.inst-info .sigla {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 2px;
+  color: var(--color-brand-gold);
+  text-transform: uppercase;
+}
+
+.inst-info .inst-nome {
+  /*
+    clamp(mín, ideal, máx):
+    fonte cresce com a tela (2.5vw = 2.5% da largura),
+    mas nunca fica menor que 13px nem maior que 15px.
+    Responsivo SEM @media query!
+  */
+  font-size: clamp(13px, 2.5vw, 15px);
+  font-weight: var(--fw-semi);
+  color: rgba(255,255,255, .9);
+}
+
+.header-badges {
+  display: flex;
+  flex-direction: column;   /* badges empilhadas uma sobre a outra  */
+  align-items: flex-end;    /* alinhadas à direita                  */
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: var(--text-xs);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;   /* nunca quebra em duas linhas */
+}
+.badge-mat { background: var(--color-brand-gold); color: #12213a; }
+.badge-alu {
+  background: rgba(255,255,255, .12);
+  color: rgba(255,255,255, .9);
+  border: 1px solid rgba(255,255,255, .18);
+}
+
+/* ── Título principal ── */
+.header-title {
+  text-align: center;
+  padding-bottom: 8px;
+}
+
+/* Pílula "A01 · Projeto Prático" */
+.header-title .tag {
+  display: inline-block;
+  background: rgba(255,180,0, .18);
+  color: var(--color-brand-gold);
+  font-size: var(--text-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 2px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255,180,0, .3);
+}
+
+.header-title h1 {
+  /*
+    clamp(22px, 4.5vw, 36px):
+    mobile: 22px | tablet: ~31px | desktop: 36px
+    Responsivo com 1 linha de código!
+  */
+  font-size: clamp(22px, 4.5vw, 36px);
+  font-weight: var(--fw-black);
+  line-height: 1.15;
+  letter-spacing: -.5px;
+}
+.header-title h1 span { color: var(--color-brand-gold); }
+
+.header-title .sub {
+  font-size: var(--text-sm);
+  color: rgba(255,255,255, .55);
+  margin-top: 8px;
+  font-weight: var(--fw-normal);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   ONDAS SVG ANIMADAS
+   ═══════════════════════════════════════════════════════════
+   TRUQUE DO LOOP INFINITO:
+   A onda tem width: 200% (DOBRO da tela).
+   A animação move -50% = exatamente 1 largura de tela.
+   Quando chega no fim = está de volta ao início → loop perfeito!
+
+   3 ondas com velocidades e direções diferentes = parece água real.
+   ═══════════════════════════════════════════════════════════ */
+.waves-wrap {
+  position: relative;
+  height: 50px;
+  margin-top: 22px;
+  overflow: hidden;   /* esconde a parte fora da tela */
+}
+
+.wave {
+  position: absolute;
+  bottom: 0;
+  width: 200%;    /* DOBRO — segredo do loop */
+  height: 50px;
+}
+
+/* linear = velocidade constante (essencial para loops — ease quebraria a ilusão) */
+.wave-1 { fill: rgba(0,156,59, .2);   animation: onda 7s  linear infinite; }
+.wave-2 { fill: rgba(255,180,0, .12); animation: onda 10s linear infinite reverse; }
+/* reverse = direção oposta, cria profundidade */
+.wave-3 { fill: var(--bg-primary);    animation: onda 13s linear infinite; }
+
+/* A animação: desloca 50% da largura total = 1 tela */
+@keyframes onda {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   LAYOUT PRINCIPAL
+   ═══════════════════════════════════════════════════════════ */
+main {
+  max-width: 860px;
+  margin: 0 auto;           /* centraliza horizontalmente */
+  padding: 32px 20px 64px;  /* top | lados | bottom      */
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   CARD — COMPONENTE REUTILIZÁVEL
+   ═══════════════════════════════════════════════════════════
+   Usado em vários lugares (calculadora, resultado, etc.).
+   Princípio DRY: Don't Repeat Yourself — 1 classe = 1 estilo.
+
+   animation: fadeUp — cards surgem suavemente ao carregar.
+   ═══════════════════════════════════════════════════════════ */
+.card {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--borda);
+  box-shadow: var(--shadow-sm);
+  padding: 28px;
+  margin-bottom: 20px;
+  animation: fadeUp .45s ease both;
+  /*
+    fadeUp: nome da animação (definida abaixo com @keyframes)
+    .45s: duração de 450 milissegundos
+    ease: acelera e depois desacelera (movimento natural)
+    both: mantém estado inicial antes de começar
+  */
+}
+
+/* @keyframes: define os quadros da animação.
+   O browser cria todos os frames intermediários automaticamente.
+   opacity 0→1 = aparece | translateY(18px)→0 = sobe enquanto aparece */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* nth-child(n): seleciona o N-ésimo filho.
+   Delays diferentes = cards aparecem em cascata (um após o outro). */
+.card:nth-child(1) { animation-delay: .05s; }
+.card:nth-child(2) { animation-delay: .12s; }
+.card:nth-child(3) { animation-delay: .19s; }
+.card:nth-child(4) { animation-delay: .26s; }
+.card:nth-child(5) { animation-delay: .33s; }
+
+/* ── Título de seção dentro dos cards ── */
+.sec-title {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;   /* maiúsculas via CSS, sem mudar HTML */
+  color: var(--color-brand-green-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--bg-green-light);
+}
+.sec-title svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   FORMULÁRIO — INPUT DE SALÁRIO (CORRIGIDO)
+   ═══════════════════════════════════════════════════════════
+   O campo estava "troncho" porque:
+   1. .inst-logo não tinha justify-content (miscelânea no original)
+   2. .inp-prefix usava position:absolute sem o pai ter position:relative
+   3. O input não tinha padding-left suficiente para o "R$"
+
+   CORREÇÃO APLICADA:
+   - .input-wrap tem position: relative (contexto para o R$)
+   - .inp-prefix é absolute dentro do wrap
+   - input tem padding-left: 52px (espaço para o R$)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Label vinculada ao input pelo atributo for="id".
+   Clicar no label = foca o input. Leitores de tela anunciam o label. */
+label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--fw-bold);
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+/* O .input-wrap é o "container" do input + prefixo R$.
+   position: relative = necessário para .inp-prefix absolute funcionar */
+.input-wrap {
+  position: relative;   /* ← contexto de posicionamento para o filho .inp-prefix */
+}
+
+/* "R$" posicionado DENTRO do input, à esquerda.
+   position: absolute = flutua sobre o input, não empurra nada.
+   top: 50% + translateY(-50%) = técnica para centralizar verticalmente */
+.inp-prefix {
+  position: absolute;
+  left: 16px;                         /* 16px da borda esquerda              */
+  top: 50%;                           /* começa no meio vertical              */
+  transform: translateY(-50%);        /* sobe metade de si mesmo = centro     */
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: var(--fw-semi);
+  color: var(--color-brand-green-dark);
+  pointer-events: none;   /* cliques passam para o input abaixo */
+  z-index: 1;
+  user-select: none;       /* usuário não pode selecionar o "R$" */
+}
+
+/* O input em si */
+input[type="text"] {
+  width: 100%;
+  /*
+    padding: top | right | bottom | left
+    left: 52px = espaço reservado para o "R$" (CORREÇÃO DO BUG!)
+    Sem esse espaço, o texto digitado ficava em cima do "R$".
+  */
+  padding: 16px 16px 16px 52px;
+  border: 2px solid var(--borda);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);  /* monospace alinha os dígitos */
+  font-size: 22px;
+  font-weight: var(--fw-semi);
+  color: var(--color-text-primary);
+  background: #f8fafc;
+  outline: none;    /* remove o outline feio padrão do browser */
+  transition: var(--tr);
+  /* transition: anima suavemente a mudança de border-color ao focar */
+}
+
+/* :focus = quando o campo está selecionado (clique ou Tab).
+   NUNCA remova :focus completamente — usuários de teclado precisam!
+   box-shadow com 0 spread = "anel de foco" acessível e bonito. */
+input[type="text"]:focus {
+  border-color: var(--color-brand-green-dark);
+  background: var(--bg-white);
+  box-shadow: 0 0 0 4px rgba(26,115,64, .12);
+}
+
+/* placeholder = texto de dica que some ao digitar */
+input::placeholder {
+  color: var(--color-text-muted);
+  font-weight: var(--fw-normal);
+}
+
+/* Mensagem de erro — display:none por padrão.
+   Classe .vis adicionada pelo JS para mostrar. */
+.erro {
+  color: #d32f2f;
+  font-size: var(--text-sm);
+  margin-top: 6px;
+  display: none;
+}
+.erro.vis { display: block; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   BOTÕES
+   ═══════════════════════════════════════════════════════════
+   SEMPRE use <button> para ações. NUNCA use <div> ou <span>.
+   Botões são acessíveis por teclado (Tab, Enter, Espaço)
+   e anunciados como "botão" por leitores de tela.
+   ═══════════════════════════════════════════════════════════ */
+.btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;   /* no mobile, botões podem quebrar para linha abaixo */
+  margin-top: 20px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-family: var(--font-base);
+  font-size: var(--text-md);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  transition: var(--tr);
+  white-space: nowrap;
+}
+.btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* Botão principal — calcular */
+.btn-calc {
+  background: var(--color-brand-green-dark);
+  color: #fff;
+  flex: 1;                /* ocupa todo o espaço disponível no mobile */
+  justify-content: center;
+  box-shadow: 0 4px 18px rgba(26,115,64, .28);
+}
+.btn-calc:hover     { background: #145c32; transform: translateY(-1px); }
+.btn-calc:active    { transform: translateY(0); } /* feedback de "pressionar" */
+/* :active = estado quando o botão está sendo clicado */
+
+/* Estado de carregamento (adicionado via JS durante o cálculo) */
+.btn-calc.loading {
+  opacity: .75;
+  pointer-events: none;   /* impede clique duplo durante processamento */
+}
+
+/* Spinner animado que aparece durante .loading */
+.spin {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255, .4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: gira .6s linear infinite;
+  display: none;
+}
+/* O JS adiciona .loading ao botão — o CSS cuida do que mostrar/esconder */
+.btn-calc.loading .spin   { display: block; }   /* mostra spinner  */
+.btn-calc.loading .icoBtn { display: none; }    /* esconde ícone   */
+@keyframes gira { to { transform: rotate(360deg); } }
+
+/* Botão secundário — limpar */
+.btn-lim {
+  background: var(--bg-white);
+  color: var(--color-text-secondary);
+  border: 2px solid var(--borda);
+}
+.btn-lim:hover { border-color: #b0b8cc; color: var(--color-text-primary); }
+
+/* Botão de PDF */
+.btn-pdf {
+  background: var(--color-brand-blue-dark);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0,48,130, .22);
+}
+.btn-pdf:hover { background: #001a5e; transform: translateY(-1px); }
+
+
+/* ═══════════════════════════════════════════════════════════
+   RESULTADO DO CÁLCULO
+   ═══════════════════════════════════════════════════════════
+   display:none por padrão.
+   O JS adiciona .vis para mostrar (display:block).
+   ═══════════════════════════════════════════════════════════ */
+#resultado { display: none; animation: fadeUp .5s ease both; }
+#resultado.vis { display: block; }
+
+/* Grid dos dois cards de resultado (imposto + alíquota) */
+.res-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;   /* 2 colunas iguais */
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.res-card { border-radius: var(--radius-md); padding: 22px; text-align: center; }
+.res-card.rv { background: linear-gradient(135deg,#dff5ea,#c8f0d8); border: 1.5px solid #9dddb8; }
+.res-card.ra { background: linear-gradient(135deg,#dde8fb,#c8d9f8); border: 1.5px solid #99b8f0; }
+.res-label { font-size: var(--text-xs); font-weight: var(--fw-bold); letter-spacing: 1px; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 8px; }
+.res-valor {
+  font-family: var(--font-mono);
+  font-size: clamp(20px,4vw,30px);   /* responsivo automático */
+  font-weight: var(--fw-bold);
+  line-height: 1;
+}
+.res-card.rv .res-valor { color: var(--color-brand-green-dark); }
+.res-card.ra .res-valor { color: var(--color-brand-blue-dark); }
+.res-sub { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 6px; }
+
+/* Tabela de detalhamento por faixa */
+.tabela-res { width: 100%; border-collapse: collapse; font-size: var(--text-md); }
+.tabela-res thead th { padding: 9px 14px; text-align: left; font-size: var(--text-xs); font-weight: var(--fw-bold); letter-spacing: .7px; text-transform: uppercase; color: var(--color-text-muted); border-bottom: 2px solid var(--borda); }
+.tabela-res tbody tr { border-bottom: 1px solid #f0f2f8; transition: background .15s; }
+.tabela-res tbody tr.ativa { background: #f0f9f4; }
+.tabela-res tbody td { padding: 10px 14px; vertical-align: middle; }
+.tabela-res tbody td.dir { font-family: var(--font-mono); font-weight: var(--fw-semi); text-align: right; }
+
+/* Indicador piscante na faixa ativa */
+.marcador {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9px; font-weight: var(--fw-bold); color: var(--color-brand-green-dark);
+  background: #c8f0d8; padding: 2px 7px; border-radius: 10px; margin-left: 7px;
+  animation: pisca 1.4s infinite;
+}
+@keyframes pisca { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+/* Barra de progresso da alíquota */
+.prog-wrap { margin-top: 18px; }
+.prog-labels { display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--color-text-secondary); margin-bottom: 6px; }
+.prog-track { height: 10px; background: #e8ecf2; border-radius: 5px; overflow: hidden; }
+.prog-fill {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--color-brand-green), var(--color-brand-green-dark));
+  transition: width .8s cubic-bezier(.4,0,.2,1);
+  width: 0%;
+}
+
+/* Nota explicativa */
+.nota {
+  background: var(--bg-gold-light);
+  border: 1px solid var(--borda-gold);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  font-size: var(--text-sm);
+  color: #7a5800;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 16px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   ACORDEÃO — SEÇÕES EDUCATIVAS RECOLHÍVEIS
+   ═══════════════════════════════════════════════════════════
+   TRUQUE DO max-height:
+   display:none → não pode ser animado (some instantaneamente)
+   max-height: 0 → PODE ser animado com transition!
+
+   Fechado: max-height:0 + overflow:hidden = conteúdo invisível
+   Aberto:  max-height:1400px → anima suavemente (o conteúdo
+   real é muito menor que 1400px, então nunca vemos o limite).
+   ═══════════════════════════════════════════════════════════ */
+.acordeao { margin-bottom: 12px; }
+
+.acord-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  cursor: pointer;
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--borda);
+  box-shadow: var(--shadow-sm);
+  transition: var(--tr);
+  user-select: none;   /* texto do header não é selecionável — comportamento de botão */
+  gap: 12px;
+}
+.acord-header:hover {
+  border-color: var(--color-brand-green-dark);
+  box-shadow: var(--shadow-md);
+  background: #fafffe;
+}
+.acord-header.aberto {
+  border-color: var(--color-brand-green-dark);
+  border-bottom-left-radius: 0;   /* une visualmente com o corpo abaixo */
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+  background: linear-gradient(90deg, #f0faf5, var(--bg-white));
+}
+
+.acord-esq { display: flex; align-items: center; gap: 12px; flex: 1; }
+.acord-icone { font-size: 22px; flex-shrink: 0; }
+.acord-titulo { font-size: var(--text-md); font-weight: var(--fw-bold); color: var(--color-text-primary); line-height: 1.3; }
+.acord-sub    { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+
+/* Seta que gira ao abrir/fechar */
+.acord-seta {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--bg-green-light);
+  border: 1.5px solid var(--borda-green);
+  display: flex; align-items: center; justify-content: center;
+  /* Cada propriedade animada separada = melhor controle */
+  transition:
+    transform .32s cubic-bezier(.4,0,.2,1),
+    background .2s ease,
+    border-color .2s ease;
+}
+.acord-seta svg { width: 14px; height: 14px; stroke: var(--color-brand-green-dark); transition: stroke .2s; }
+
+/* Quando aberto: seta vira de cabeça para baixo, fundo fica verde */
+.acord-header.aberto .acord-seta {
+  transform: rotate(180deg);
+  background: var(--color-brand-green-dark);
+  border-color: var(--color-brand-green-dark);
+}
+.acord-header.aberto .acord-seta svg { stroke: #fff; }
+
+/* Corpo do acordeão — o truque do max-height */
+.acord-body {
+  max-height: 0;         /* FECHADO: conteúdo oculto                    */
+  overflow: hidden;      /* impede que o conteúdo "vaze" para fora       */
+  transition: max-height .42s cubic-bezier(.4,0,.2,1);
+  background: var(--bg-white);
+  border: 1.5px solid var(--color-brand-green-dark);
+  border-top: none;
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+.acord-body-inner { padding: 22px; }
+.acord-body.aberto { max-height: 1400px; }   /* ABERTO: anima suavemente */
+
+
+/* ═══════════════════════════════════════════════════════════
+   CARDS EDUCATIVOS (dentro dos acordeões)
+   ═══════════════════════════════════════════════════════════
+   CSS Grid com auto-fit: cria colunas automaticamente.
+   repeat(auto-fit, minmax(200px, 1fr)):
+   - auto-fit: quantas colunas couberem no espaço
+   - minmax(200px, 1fr): mín 200px, máx 1 fração igual
+   Resultado: responsivo SEM @media query!               */
+.edu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.edu-card {
+  border-radius: var(--radius-md);
+  padding: 18px;
+  border: 1.5px solid transparent;
+  transition: var(--tr);
+}
+.edu-card:hover {
+  /* transform, não top/margin: roda na GPU, não recalcula layout (10x mais rápido!) */
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.edu-card.cv { background: var(--bg-green-light); border-color: var(--borda-green); }
+.edu-card.ca { background: var(--bg-blue-light);  border-color: var(--borda-blue); }
+.edu-card.cy { background: var(--bg-gold-light);  border-color: var(--borda-gold); }
+.edu-card.cg { background: var(--bg-gray-light);  border-color: var(--borda); }
+
+.edu-card .ei { font-size: 26px; margin-bottom: 10px; }
+.edu-card .et { font-size: var(--text-sm); font-weight: var(--fw-bold); margin-bottom: 6px; }
+.edu-card .ed { font-size: var(--text-xs); color: var(--color-text-secondary); line-height: 1.65; }
+
+/* Glossário */
+.gloss-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.gloss-item { background: var(--bg-primary); border-radius: var(--radius-sm); padding: 14px; border: 1px solid var(--borda); }
+.gloss-item .gt { font-size: var(--text-sm); font-weight: var(--fw-bold); color: var(--color-brand-blue-soft); margin-bottom: 4px; }
+.gloss-item .gd { font-size: var(--text-xs); color: var(--color-text-secondary); line-height: 1.6; }
+
+/* Tabela de alíquotas dentro dos acordeões */
+.tabela { width: 100%; border-collapse: collapse; font-size: var(--text-md); }
+.tabela thead th { padding: 10px 14px; text-align: left; font-size: var(--text-xs); font-weight: var(--fw-bold); letter-spacing: .8px; text-transform: uppercase; color: var(--color-text-muted); border-bottom: 2px solid var(--borda); }
+.tabela tbody tr { border-bottom: 1px solid #f0f2f8; transition: background .15s; }
+.tabela tbody tr:hover { background: #f8faff; }
+.tabela tbody td { padding: 11px 14px; }
+.tabela tbody td.mono { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-text-secondary); }
+
+/* Pills coloridas (badges de faixa) */
+.pill { display: inline-flex; align-items: center; padding: 3px 11px; border-radius: 20px; font-size: var(--text-xs); font-weight: var(--fw-bold); font-family: var(--font-mono); }
+.p0  { background: var(--bg-green-light); color: var(--color-brand-green-dark); }
+.p7  { background: var(--bg-blue-light);  color: var(--color-brand-blue-dark);  }
+.p15 { background: var(--bg-gold-light);  color: #7a5800; }
+.p22 { background: #fff3e8; color: #7a3200; }
+.p27 { background: #fdecea; color: #7a1c1c; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   CARIMBO "ISENTO"
+   ═══════════════════════════════════════════════════════════
+   Aparece no centro da tela quando o imposto = R$ 0,00.
+   cubic-bezier(.175,.885,.32,1.275) = "back ease out":
+   ultrapassa levemente o ponto final (efeito mola), depois volta.
+   Muito mais expressivo que ease ou linear.               */
+#carimbo {
+  display: none;
+  position: fixed;
+  top: 50%; left: 50%;
+  z-index: 9999;
+  pointer-events: none;
+  transform: translate(-50%,-50%) rotate(-14deg) scale(0);
+}
+#carimbo.ativo {
+  display: flex;
+  animation: bang .55s cubic-bezier(.175,.885,.32,1.275) forwards;
+}
+@keyframes bang {
+  0%   { transform: translate(-50%,-50%) rotate(-14deg) scale(0);    opacity: 1; }
+  65%  { transform: translate(-50%,-50%) rotate(-14deg) scale(1.12); opacity: 1; }
+  85%  { transform: translate(-50%,-50%) rotate(-14deg) scale(.96);  opacity: 1; }
+  100% { transform: translate(-50%,-50%) rotate(-14deg) scale(1);    opacity: 1; }
+}
+.carimbo-box {
+  border: 7px solid var(--color-brand-green);
+  border-radius: var(--radius-sm);
+  padding: 14px 30px;
+  text-align: center;
+  background: rgba(255,255,255, .93);
+  box-shadow: 0 0 0 3px var(--color-brand-green), var(--shadow-lg);
+}
+.ct { font-family: var(--font-mono); font-size: clamp(34px,7vw,58px); font-weight: var(--fw-bold); color: var(--color-brand-green); letter-spacing: 5px; line-height: 1; }
+.cs { font-size: var(--text-sm);     font-weight: var(--fw-bold); color: var(--color-brand-green); letter-spacing: 3px; margin-top: 4px; }
+
+
+/* ── FOOTER 
+footer {
+  background: var(--bg-white);
+  border-top: 1px solid var(--borda);
+  text-align: center;
+  padding: 20px 24px;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+footer a { color: var(--color-brand-green-dark); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+*/
+
+
+        /* ============================================= */
+        /* RODAPÉ CYBER COMPLETO */
+        /* ============================================= */
+        .cyber-footer {
+            position: relative;
+            height: auto;
+            width: 100%;
+            min-height: 100px;
+            background: var(--darker-bg);
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 0, 128, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, var(--darker-bg) 0%, var(--dark-bg) 100%),
+                linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 50px 50px, 50px 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-top: 2px solid rgba(0, 255, 255, 0.3);
+            padding: 40px 20px;
+            margin-bottom: 1px;
+        }
+
+        .footer-floating-code {
+            position: absolute;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            color: rgba(0, 255, 255, 0.2);
+            white-space: nowrap;
+            animation: floatCode 15s linear infinite;
+            z-index: 1;
+        }
+
+        .footer-floating-code:nth-child(1) {
+            top: 20%;
+            left: -100%;
+            animation-delay: 0s;
+        }
+
+        .footer-floating-code:nth-child(2) {
+            top: 50%;
+            left: -100%;
+            animation-delay: 5s;
+        }
+
+        .footer-floating-code:nth-child(3) {
+            top: 80%;
+            left: -100%;
+            animation-delay: 10s;
+        }
+
+        .footer-content-wrapper {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            width: 100%;
+        }
+
+        .footer-name {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1rem, 4vw, 2.0rem);
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 0.1em;
+            text-shadow: 
+                0 0 10px var(--cyber-green),
+                0 0 20px var(--cyber-green),
+                0 0 30px rgba(0, 255, 65, 0.5);
+            margin-bottom: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .footer-name .highlight {
+            color: var(--cyber-green);
+        }
+
+        .footer-name .cursor-blink {
+            display: inline-block;
+            width: 3px;
+            height: 1.2rem;
+            background: var(--cyber-green);
+            animation: cursorBlink 1s infinite;
+            vertical-align: middle;
+            margin-left: 3px;
+        }
+
+        @keyframes cursorBlink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .footer-subtitle {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .footer-neon-line {
+            width: 60%;
+            max-width: 400px;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                var(--cyber-cyan) 25%, 
+                var(--cyber-green) 50%, 
+                var(--cyber-purple) 75%, 
+                transparent 100%);
+            margin: 20px auto;
+            box-shadow: 0 0 10px var(--cyber-green);
+            animation: lineFlow 6s ease-in-out infinite;
+        }
+
+        .footer-link-main {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            color: var(--cyber-cyan);
+            text-decoration: none;
+            letter-spacing: 0.1em;
+            transition: all 0.3s;
+            display: inline-block;
+            margin: 15px 0;
+        }
+
+        .footer-link-main:hover {
+            color: var(--cyber-green);
+            text-shadow: 0 0 10px var(--cyber-green);
+        }
+
+        .footer-link-main::before {
+            content: '[ ';
+            color: var(--cyber-green);
+        }
+
+        .footer-link-main::after {
+            content: ' ]';
+            color: var(--cyber-green);
+        }
+
+        .tech-badges {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .tech-badge {
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid var(--cyber-green);
+            color: var(--cyber-green);
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s;
+            animation: badgePulse 3s infinite;
+        }
+
+        .tech-badge:nth-child(1) { animation-delay: 0s; }
+        .tech-badge:nth-child(2) { animation-delay: 0.3s; }
+        .tech-badge:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes badgePulse {
+            0%, 100% {
+                box-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 15px rgba(0, 255, 65, 0.6);
+            }
+        }
+
+        .tech-badge:hover {
+            background: var(--cyber-green);
+            color: var(--darker-bg);
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px var(--cyber-green);
+        }
+
+        /* Linha colorida inferior */
+        .footer-rainbow-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, 
+                #00ffff 0%, 
+                #00ff41 25%, 
+                #ff0080 50%, 
+                #8000ff 75%, 
+                #00ffff 100%);
+            background-size: 200% 100%;
+            animation: rainbowFlow 3s linear infinite;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        @keyframes rainbowFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .girl-dev {
+          font-size: 1.2rem;
+        }
+        /* ============================================= */
+        /* RESPONSIVIDADE */
+        /* ============================================= */
+
+           /* Footer */
+            .cyber-footer {
+                min-height: 200px;
+                padding: 30px 15px;
+            }
+
+            .footer-floating-code {
+                font-size: 0.6rem;
+            }
+
+            .footer-neon-line {
+                width: 80%;
+            }
+
+            .tech-badges {
+                gap: 8px;
+            }
+
+            .tech-badge {
+                font-size: 0.65rem;
+                padding: 4px 10px;
+            }
+    
+
+        @media (max-width: 480px) {
+            .nav-logo {
+                font-size: 1.2rem;
+            }
+
+            .cyber-header {
+                min-height: 200px;
+            }
+
+            .floating-code {
+                font-size: 0.5rem;
+            }
+
+            .cyber-footer {
+                min-height: 220px;
+            }
+
+            .footer-neon-line {
+                width: 90%;
+            }
+
+            .tech-badges {
+                gap: 6px;
+            }
+        }
+
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVIDADE — MOBILE-FIRST
+   ═══════════════════════════════════════════════════════════
+   O CSS ACIMA (sem @media) = base MOBILE (< 600px).
+   Os @media abaixo EXPANDEM para telas maiores.
+
+   max-width: 600px → ajustes específicos para mobile pequeno
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* Esconde badges do header — economiza espaço no celular */
+  .header-badges { display: none; }
+
+  /* Menos padding nos cards */
+  .card { padding: 20px 16px; }
+
+  /* Menos padding no main */
+  main { padding: 20px 14px 48px; }
+
+  /* Resultado: 1 coluna (2 ficam apertadas no celular) */
+  .res-grid { grid-template-columns: 1fr; }
+
+  /* Botões empilhados verticalmente */
+  .btn-row { flex-direction: column; }
+
+  /* Botão ocupa largura total (mais fácil de tocar) */
+  .btn { width: 100%; justify-content: center; }
+
+  /* Colunas secundárias das tabelas somem (economiza espaço) */
+  .col-h { display: none; }
+
+  /* Grids de 1 coluna */
+  .edu-grid,
+  .gloss-grid { grid-template-columns: 1fr; }
+}
+
+/* Acessibilidade: respeita preferência do sistema por menos movimento
+   (usuários com epilepsia, vertigem, etc.) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+  </style>
+</head>
+
+<!-- O <body> vem depois do <head>.
+     O <script> fica no FINAL do body — todos os elementos HTML
+     já existem quando o JavaScript começa a executar. -->
+<body>
+
+  <!-- Canvas para o confete — cobre a tela inteira, decorativo -->
+  <canvas
+    id="confete"
+    style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;display:none;"
+    aria-hidden="true"
+  ></canvas>
+
+  <!-- Carimbo ISENTO — aparece quando imposto = 0 -->
+  <div id="carimbo" aria-live="polite" aria-atomic="true">
+    <div class="carimbo-box">
+      <div class="ct">🇧🇷 ISENTO</div>
+      <div class="cs">Imposto de Renda</div>
+    </div>
+  </div>
+
+  <!-- Faixa decorativa verde/amarelo/azul -->
+  <div class="faixa-brasil" aria-hidden="true"></div>
+
+  <!-- ────────────────────────────────────────
+       <header>: tag semântica do HTML5.
+       Diferente de <div class="header">,
+       leitores de tela anunciam "cabeçalho".
+       ──────────────────────────────────────── -->
+  <header role="banner">
+    <div class="deco d1" aria-hidden="true"></div>
+    <div class="deco d2" aria-hidden="true"></div>
+    <div class="deco d3" aria-hidden="true"></div>
+
+    <div class="header-inner">
+
+      <!-- Linha: logo + UNICAP + badges -->
+      <div class="header-top">
+        <div class="inst-logo" aria-hidden="true">🎓</div>
+        <div class="inst-info">
+          <div class="sigla">UNICAP</div>
+          <div class="inst-nome">Universidade Católica de Pernambuco</div>
+        </div>
+        <div class="header-badges">
+          <span class="badge badge-mat">Programação para Web</span>
+          <span class="badge badge-alu">👩‍💻 Vanessa Rafaella</span>
+        </div>
+      </div>
+
+      <!-- Título principal — h1: APENAS 1 por página! -->
+      <div class="header-title">
+        <div class="tag">A01 · Projeto Prático</div>
+        <h1>Simulador de <span>IRPF</span><br/>Imposto de Renda 2025</h1>
+        <p class="sub">Cálculo mensal de alíquotas efetivas · Tabela vigente em Janeiro/2025</p>
+      </div>
+    </div>
+
+    <!-- Ondas decorativas — aria-hidden: leitores de tela ignoram -->
+    <div class="waves-wrap" aria-hidden="true">
+      <svg class="wave wave-1" viewBox="0 0 1440 50" preserveAspectRatio="none">
+        <path d="M0,25 C240,50 480,0 720,25 C960,50 1200,0 1440,25 L1440,50 L0,50Z"/>
+      </svg>
+      <svg class="wave wave-2" viewBox="0 0 1440 50" preserveAspectRatio="none">
+        <path d="M0,15 C280,45 560,5 840,22 C1120,42 1300,8 1440,20 L1440,50 L0,50Z"/>
+      </svg>
+      <svg class="wave wave-3" viewBox="0 0 1440 50" preserveAspectRatio="none">
+        <path d="M0,30 C200,5 450,48 720,20 C990,5 1220,42 1440,28 L1440,50 L0,50Z"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- ────────────────────────────────────────
+       <main>: conteúdo principal da página.
+       Apenas 1 por página. Leitores de tela
+       têm atalho direto para este elemento.
+       ──────────────────────────────────────── -->
+  <main role="main">
+
+    <!-- ══════════════════════════════════════════
+         1º — CALCULADORA (primeiro, conforme pedido)
+         ══════════════════════════════════════════ -->
+    <!--
+      <section>: tag semântica para seção com tema próprio.
+      aria-labelledby: vincula a seção ao seu h2.
+      Leitores de tela anunciam "seção: Calculadora".
+    -->
+    <section class="card" aria-labelledby="titulo-calculadora">
+
+      <div class="sec-title">
+        <!-- SVG inline: sem requisição HTTP, renderiza instantaneamente -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <path d="M9 7h6M9 11h6M9 15h4"/>
+        </svg>
+        <!-- h2: hierarquia correta (h1 está no header) -->
+        <h2 id="titulo-calculadora">Calculadora — Digite seu Salário Mensal</h2>
+      </div>
+
+      <!--
+        <label for="salario">: vinculado ao input pelo id.
+        Clicar no label = foca o input automaticamente.
+        Leitores de tela leem o label quando o campo recebe foco.
+      -->
+      <label for="salario">
+        Rendimento Mensal Tributável (Salário Bruto)
+      </label>
+
+      <!-- .input-wrap: container com position:relative para o R$ funcionar -->
+      <div class="input-wrap">
+
+        <!-- "R$" posicionado absolutamente dentro do input
+             aria-hidden: o aria-label do input já diz "em reais" -->
+        <span class="inp-prefix" aria-hidden="true">R$</span>
+
+        <!--
+          type="text": permite vírgula (type="number" não permite!)
+          inputmode="decimal": no mobile, abre teclado numérico com vírgula
+          aria-label: descrição para leitores de tela (placeholder some ao digitar)
+          aria-required: campo obrigatório
+          aria-describedby: vincula à mensagem de erro
+        -->
+        <input
+          type="text"
+          id="salario"
+          placeholder="0,00"
+          inputmode="decimal"
+          autocomplete="off"
+          aria-label="Salário mensal bruto em reais"
+          aria-required="true"
+          aria-describedby="erroInput"
+        />
+      </div>
+
+      <!-- Mensagem de erro — role="alert" anuncia imediatamente ao aparecer -->
+      <span
+        class="erro"
+        id="erroInput"
+        role="alert"
+        aria-live="assertive"
+      >
+        ⚠ Informe um valor válido maior que zero.
+      </span>
+
+      <!-- Botões de ação -->
+      <div class="btn-row">
+        <!--
+          type="button": sem isso, dentro de um <form>, o browser
+          poderia tratar como submit.
+          aria-label: descrição detalhada para leitores de tela.
+        -->
+        <button
+          class="btn btn-calc"
+          id="btnCalc"
+          type="button"
+          onclick="calcular()"
+          aria-label="Calcular imposto de renda sobre o salário informado"
+        >
+          <span class="icoBtn" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M9 17H7A5 5 0 0 1 7 7h2"/>
+              <path d="M15 7h2a5 5 0 1 1 0 10h-2"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+          </span>
+          <span class="spin" aria-hidden="true"></span>
+          Calcular IRPF
+        </button>
+
+        <button
+          class="btn btn-lim"
+          type="button"
+          onclick="limpar()"
+          aria-label="Limpar formulário e resultado"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>
+          </svg>
+          Limpar
+        </button>
+      </div>
+    </section>
+
+
+    <!-- ══════════════════════════════════════════
+         RESULTADO DO CÁLCULO
+         aria-live="polite": leitores de tela
+         anunciam quando este conteúdo mudar.
+         ══════════════════════════════════════════ -->
+    <div id="resultado" aria-live="polite" aria-atomic="false">
+
+      <section class="card" style="border: 2px solid var(--bg-green-light);" aria-labelledby="titulo-resultado">
+
+        <div class="sec-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <h2 id="titulo-resultado">Resultado do Cálculo</h2>
+        </div>
+
+        <!-- Dois cards: imposto + alíquota efetiva -->
+        <div class="res-grid">
+          <div class="res-card rv">
+            <div class="res-label">💰 Imposto a Recolher</div>
+            <div class="res-valor" id="valorImposto">R$ 0,00</div>
+            <div class="res-sub">Mensal · IRPF Jan/2025</div>
+          </div>
+          <div class="res-card ra">
+            <div class="res-label">📊 Alíquota Efetiva</div>
+            <div class="res-valor" id="valorAliquota">0,00%</div>
+            <div class="res-sub">Sobre o rendimento bruto</div>
+          </div>
+        </div>
+
+        <!-- Tabela de detalhamento por faixa —
+             overflow-x: auto = rola horizontalmente no mobile sem quebrar -->
+        <div style="overflow-x:auto; margin-bottom: 4px;" role="region" aria-label="Detalhamento por faixa" tabindex="0">
+          <table class="tabela-res">
+            <!-- caption invisível: descreve a tabela para leitores de tela -->
+            <caption style="display:none;">Imposto calculado por faixa de renda</caption>
+            <thead>
+              <tr>
+                <!-- scope="col": este th é cabeçalho de coluna (acessibilidade) -->
+                <th scope="col">Faixa</th>
+                <th scope="col" class="col-h">Limite</th>
+                <th scope="col" style="text-align:right;">Imposto na Faixa</th>
+              </tr>
+            </thead>
+            <!-- tbody preenchido dinamicamente pelo JavaScript -->
+            <tbody id="tbodyRes"></tbody>
+          </table>
+        </div>
+
+        <!-- Barra de progresso -->
+        <div class="prog-wrap">
+          <div class="prog-labels">
+            <span>Alíquota efetiva sobre o salário total</span>
+            <span id="progPct">0%</span>
+          </div>
+          <div
+            class="prog-track"
+            role="progressbar"
+            aria-valuenow="0"
+            aria-valuemin="0"
+            aria-valuemax="27.5"
+            aria-label="Alíquota efetiva"
+          >
+            <div class="prog-fill" id="progFill"></div>
+          </div>
+        </div>
+
+        <!-- Nota explicativa -->
+        <div class="nota" role="note">
+          <span style="font-size:18px; flex-shrink:0;" aria-hidden="true">💡</span>
+          <span>No sistema progressivo, cada real do salário é tributado apenas na alíquota da <strong>sua faixa</strong> — nunca o salário todo na alíquota mais alta. Por isso a alíquota <strong>efetiva</strong> é sempre menor que a <strong>nominal</strong> da última faixa atingida.</span>
+        </div>
+      </section>
+
+      <!-- Botão de PDF fora do card de resultado -->
+      <div class="btn-row" style="margin-top: 0;">
+        <button
+          class="btn btn-pdf"
+          type="button"
+          onclick="gerarPDF()"
+          aria-label="Baixar resultado como arquivo PDF"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          Baixar / Imprimir PDF
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════
+         2º — ACORDEÕES EDUCATIVOS (depois da calculadora)
+         ══════════════════════════════════════════ -->
+
+    <!-- ACORDEÃO 1: O que é o IRPF -->
+    <div class="acordeao">
+      <!--
+        onclick="toggleAcord(this)":
+        "this" = referência ao próprio elemento clicado.
+        A função recebe o header para saber qual acordeão manipular.
+
+        aria-expanded: informa leitores de tela se está aberto ou fechado.
+        O JavaScript atualiza este valor ao clicar.
+
+        tabindex="0": permite navegar com a tecla Tab.
+        role="button": identifica como botão para leitores de tela.
+      -->
+      <div
+        class="acord-header"
+        onclick="toggleAcord(this)"
+        aria-expanded="false"
+        role="button"
+        tabindex="0"
+      >
+        <div class="acord-esq">
+          <span class="acord-icone" aria-hidden="true">🏛️</span>
+          <div>
+            <div class="acord-titulo">O que é o IRPF e para que serve?</div>
+            <div class="acord-sub">Origem, finalidade e quem precisa pagar</div>
+          </div>
+        </div>
+        <div class="acord-seta" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+      <!-- role="region" + aria-label: define região nomeada para leitores de tela -->
+      <div class="acord-body" role="region" aria-label="O que é o IRPF">
+        <div class="acord-body-inner">
+          <div class="edu-grid">
+            <div class="edu-card cv">
+              <div class="ei" aria-hidden="true">🏛️</div>
+              <div class="et">O que é o IRPF?</div>
+              <div class="ed">O <strong>Imposto de Renda da Pessoa Física</strong> é um tributo federal cobrado sobre rendimentos (salários, aluguéis, etc.) de cada cidadão, gerenciado pela <strong>Receita Federal</strong>.</div>
+            </div>
+            <div class="edu-card ca">
+              <div class="ei" aria-hidden="true">🏥</div>
+              <div class="et">Para que serve?</div>
+              <div class="ed">Financia serviços públicos: <strong>saúde, educação, segurança e infraestrutura</strong>. É uma das maiores fontes de receita do governo federal.</div>
+            </div>
+            <div class="edu-card cy">
+              <div class="ei" aria-hidden="true">📅</div>
+              <div class="et">Quando é cobrado?</div>
+              <div class="ed">Para CLT: descontado <strong>todo mês na folha</strong> pelo empregador (IRRF). Uma vez por ano: <strong>Declaração do IR</strong> para ajustar o valor final.</div>
+            </div>
+            <div class="edu-card cg">
+              <div class="ei" aria-hidden="true">⚖️</div>
+              <div class="et">É progressivo — o que significa?</div>
+              <div class="ed">Quem ganha mais paga proporcionalmente mais. A alíquota <em>efetiva</em> é sempre menor que a da última faixa atingida.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACORDEÃO 2: Como funciona -->
+    <div class="acordeao">
+      <div class="acord-header" onclick="toggleAcord(this)" aria-expanded="false" role="button" tabindex="0">
+        <div class="acord-esq">
+          <span class="acord-icone" aria-hidden="true">📊</span>
+          <div>
+            <div class="acord-titulo">Como funciona o cálculo progressivo?</div>
+            <div class="acord-sub">Faixas, alíquotas, deduções e exemplo prático</div>
+          </div>
+        </div>
+        <div class="acord-seta" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+      <div class="acord-body" role="region" aria-label="Como funciona o cálculo">
+        <div class="acord-body-inner">
+          <div class="edu-grid" style="margin-bottom: 20px;">
+            <div class="edu-card cv">
+              <div class="ei" aria-hidden="true">🍰</div>
+              <div class="et">O imposto é como fatias de bolo</div>
+              <div class="ed">Cada parte do salário é tributada na alíquota da <strong>sua faixa</strong>. Nunca o salário todo. Por isso a alíquota efetiva é menor que a última faixa.</div>
+            </div>
+            <div class="edu-card ca">
+              <div class="ei" aria-hidden="true">📐</div>
+              <div class="et">Exemplo: salário de R$ 3.000</div>
+              <div class="ed">
+                3.000 × 15% = R$ 450,00<br/>
+                450,00 − R$ 381,44 (dedução) = <strong>R$ 68,56</strong><br/>
+                Alíquota efetiva = <strong>2,28%</strong>
+              </div>
+            </div>
+          </div>
+          <!-- overflow-x: auto = tabela rolável no mobile -->
+          <div style="overflow-x: auto;" role="region" aria-label="Tabela de alíquotas" tabindex="0">
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th scope="col">Faixa</th>
+                  <th scope="col" class="col-h">Base de Cálculo</th>
+                  <th scope="col">Alíquota</th>
+                  <th scope="col" class="col-h">Dedução</th>
+                  <th scope="col">O que significa</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><span class="pill p0">1ª Faixa</span></td><td class="mono col-h">Até R$ 2.259,20</td><td><span class="pill p0">Isento · 0%</span></td><td class="mono col-h">—</td><td style="font-size:12px;color:var(--color-text-secondary);">Não paga IR 🎉</td></tr>
+                <tr><td><span class="pill p7">2ª Faixa</span></td><td class="mono col-h">R$ 2.259,21 a R$ 2.826,65</td><td><span class="pill p7">7,5%</span></td><td class="mono col-h">R$ 169,44</td><td style="font-size:12px;color:var(--color-text-secondary);">Só o excedente de R$ 2.259,20</td></tr>
+                <tr><td><span class="pill p15">3ª Faixa</span></td><td class="mono col-h">R$ 2.826,66 a R$ 3.751,05</td><td><span class="pill p15">15%</span></td><td class="mono col-h">R$ 381,44</td><td style="font-size:12px;color:var(--color-text-secondary);">Só o excedente de R$ 2.826,65</td></tr>
+                <tr><td><span class="pill p22">4ª Faixa</span></td><td class="mono col-h">R$ 3.751,06 a R$ 4.664,68</td><td><span class="pill p22">22,5%</span></td><td class="mono col-h">R$ 662,77</td><td style="font-size:12px;color:var(--color-text-secondary);">Só o excedente de R$ 3.751,05</td></tr>
+                <tr><td><span class="pill p27">5ª Faixa</span></td><td class="mono col-h">Acima de R$ 4.664,68</td><td><span class="pill p27">27,5%</span></td><td class="mono col-h">R$ 896,00</td><td style="font-size:12px;color:var(--color-text-secondary);">Só o excedente de R$ 4.664,68</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACORDEÃO 3: Glossário -->
+    <div class="acordeao">
+      <div class="acord-header" onclick="toggleAcord(this)" aria-expanded="false" role="button" tabindex="0">
+        <div class="acord-esq">
+          <span class="acord-icone" aria-hidden="true">📖</span>
+          <div>
+            <div class="acord-titulo">Glossário — termos que você precisa conhecer</div>
+            <div class="acord-sub">Alíquota, base de cálculo, dedução, isenção e mais</div>
+          </div>
+        </div>
+        <div class="acord-seta" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+      <div class="acord-body" role="region" aria-label="Glossário de termos">
+        <div class="acord-body-inner">
+          <div class="gloss-grid">
+            <div class="gloss-item"><div class="gt">📌 Alíquota</div><div class="gd">Percentual (%) que define quanto de imposto incide sobre uma faixa de renda. Ex: 15% na 3ª faixa.</div></div>
+            <div class="gloss-item"><div class="gt">📌 Alíquota Efetiva</div><div class="gd">Percentual real de imposto sobre o salário total. Sempre menor que a alíquota da última faixa.</div></div>
+            <div class="gloss-item"><div class="gt">📌 Base de Cálculo</div><div class="gd">Valor sobre o qual o imposto incide. Geralmente salário bruto menos deduções (INSS, dependentes).</div></div>
+            <div class="gloss-item"><div class="gt">📌 Dedução</div><div class="gd">Valor fixo subtraído do imposto calculado. Evita dupla tributação entre faixas progressivas.</div></div>
+            <div class="gloss-item"><div class="gt">📌 IRRF</div><div class="gd">Imposto de Renda Retido na Fonte — descontado diretamente no salário pelo empregador todo mês.</div></div>
+            <div class="gloss-item"><div class="gt">📌 Isenção</div><div class="gd">Quem ganha até R$ 2.259,20/mês (Jan/2025) está isento: não paga nenhum imposto de renda.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- 
+  <footer role="contentinfo">
+    Projeto desenvolvido para <strong>Programação para Web</strong> · UNICAP ·
+    Aluna: <strong>Vanessa Rafaella</strong> · Jan/2025 ·
+    <a href="https://www.gov.br/receitafederal" target="_blank" rel="noopener noreferrer">
+      Receita Federal do Brasil
+    </a>
+   
+  </footer> -->
+
+   <!-- ============================================= -->
+    <!-- footer cyber -->
+    <!-- ============================================= -->
+    <footer class="cyber-footer">
+        <div class="footer-floating-code">© 2024 Vanessa Rafaella • All rights reserved</div>
+        <div class="footer-floating-code">Built with ❤️ and lots of ☕</div>
+        <div class="footer-floating-code">System.out.println("Thanks for visiting!");</div>
+
+        <div class="footer-content-wrapper">
+            <div class="footer-name">
+                Programaçāo para<span class="highlight"> Web</span><span class="cursor-blink"></span>
+            </div>
+            <div class="footer-subtitle">UNICAP - SISTEMAS PARA INTERNET</div>
+            
+            <div class="footer-neon-line"></div>
+            
+            <div class="footer-link-main">
+                <span class="girl-dev">👩🏻‍💻</span> Vanessa Rafaella
+            </div>
+            
+            <div class="tech-badges">
+                <span class="tech-badge">HTML5</span>
+                <span class="tech-badge">CSS3</span>
+                <span class="tech-badge">JavaScript</span>
+            </div>
+        </div>
+
+        <div class="footer-rainbow-line"></div>
+    </footer>
+
+
+
+  <!-- ════════════════════════════════════════════════════════
+       JAVASCRIPT — POSICIONADO NO FINAL DO <body>
+       ════════════════════════════════════════════════════════
+       Por que aqui e não no <head>?
+       O browser lê HTML de cima para baixo. Se o script
+       estiver no <head>, ele roda antes de qualquer elemento
+       HTML existir. getElementById retornaria null.
+       No final do body: tudo já foi criado e renderizado. ✓
+       ════════════════════════════════════════════════════════ -->
+  <script>
+
+    /* ════════════════════════════════════════════════════════
+       DADOS — TABELA IRPF JANEIRO 2025
+       Array de objetos: cada objeto = uma faixa de renda.
+       Array  = lista: [ item, item, item ]
+       Objeto = ficha: { propriedade: valor, propriedade: valor }
+       ════════════════════════════════════════════════════════ */
+    var FAIXAS = [
+      { label: '1ª Faixa', limite: 2259.20,  pill: 'p0',  texto: 'Isento 0%' },
+      { label: '2ª Faixa', limite: 2826.65,  pill: 'p7',  texto: '7,5%'      },
+      { label: '3ª Faixa', limite: 3751.05,  pill: 'p15', texto: '15%'       },
+      { label: '4ª Faixa', limite: 4664.68,  pill: 'p22', texto: '22,5%'     },
+      { label: '5ª Faixa', limite: Infinity, pill: 'p27', texto: '27,5%'     },
+      /* Infinity = sem limite superior — valor especial do JavaScript */
+    ];
+
+
+    /* ════════════════════════════════════════════════════════
+       FUNÇÕES DE CÁLCULO — UMA POR FAIXA (exigência do professor)
+       ════════════════════════════════════════════════════════
+
+       Lógica de cada faixa:
+       1. Se salário não chegou nessa faixa → retorna 0
+       2. Math.min(s, limite): garante que não ultrapassa o teto
+       3. Subtrai o início da faixa e multiplica pela alíquota
+
+       EXEMPLO s = R$ 3.000:
+       Faixa2: min(3000, 2826.65) = 2826.65
+               2826.65 - 2259.20 = 567.45 × 7.5% = R$ 42,56
+       Faixa3: min(3000, 3751.05) = 3000
+               3000 - 2826.65    = 173.35 × 15%  = R$ 26,00
+       Total: R$ 68,56
+       ════════════════════════════════════════════════════════ */
+
+    /* Faixa 1 — isenta, sempre zero */
+    function calcularFaixa1(s) {
+      return 0;
+    }
+
+    /* Faixa 2 — 7,5% sobre excedente até R$ 2.826,65 */
+    function calcularFaixa2(s) {
+      if (s <= 2259.20) return 0;
+      return (Math.min(s, 2826.65) - 2259.20) * 0.075;
+    }
+
+    /* Faixa 3 — 15% sobre excedente até R$ 3.751,05 */
+    function calcularFaixa3(s) {
+      if (s <= 2826.65) return 0;
+      return (Math.min(s, 3751.05) - 2826.65) * 0.15;
+    }
+
+    /* Faixa 4 — 22,5% sobre excedente até R$ 4.664,68 */
+    function calcularFaixa4(s) {
+      if (s <= 3751.05) return 0;
+      return (Math.min(s, 4664.68) - 3751.05) * 0.225;
+    }
+
+    /* Faixa 5 — 27,5% sobre tudo acima de R$ 4.664,68 (sem limite) */
+    function calcularFaixa5(s) {
+      if (s <= 4664.68) return 0;
+      return (s - 4664.68) * 0.275;
+      /* Sem Math.min: faixa 5 não tem teto superior */
+    }
+
+    /* Soma todas as faixas — cada uma retorna 0 se não atingida */
+    function calcularImpostoDue(s) {
+      return calcularFaixa1(s)
+           + calcularFaixa2(s)
+           + calcularFaixa3(s)
+           + calcularFaixa4(s)
+           + calcularFaixa5(s);
+    }
+
+    /* Alíquota efetiva: imposto ÷ salário × 100
+       Proteção contra divisão por zero (retornaria Infinity) */
+    function calcularAliquotaEfetiva(salario, ir) {
+      if (salario === 0) return 0;
+      return (ir / salario) * 100;
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       UTILITÁRIOS DE FORMATAÇÃO
+       ════════════════════════════════════════════════════════ */
+
+    /* toLocaleString('pt-BR'): formata para padrão brasileiro.
+       1234.5 → "1.234,50" (ponto milhar, vírgula decimal) */
+    function fmtMoeda(v) {
+      return v.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function fmtPct(v) {
+      return v.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) + '%';
+    }
+
+    /* Converte texto do input para número.
+       "3.000,50" → 3000.50
+       Passos:
+       1. trim()           → remove espaços nas bordas
+       2. replace(/\./g,'')→ remove pontos de milhar  "3.000" → "3000"
+       3. replace(',','.')  → vírgula → ponto         "3000,50" → "3000.50"
+       4. parseFloat()     → string → number          "3000.50" → 3000.50 */
+    function parseSal(txt) {
+      return parseFloat(
+        txt.trim()
+           .replace(/\./g, '')
+           .replace(',', '.')
+      );
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       FUNÇÃO PRINCIPAL — calcular()
+       ════════════════════════════════════════════════════════ */
+    function calcular() {
+      var btn = document.getElementById('btnCalc');
+      var inp = document.getElementById('salario');
+      var err = document.getElementById('erroInput');
+
+      /* Mostra spinner, desativa botão (evita clique duplo) */
+      btn.classList.add('loading');
+      btn.setAttribute('aria-busy', 'true');
+
+      /*
+        setTimeout(fn, ms): executa a função após o delay.
+        350ms = spinner visível por um tempo antes do resultado.
+        Dá sensação de "processando" (melhora UX percebida).
+      */
+      setTimeout(function() {
+        btn.classList.remove('loading');
+        btn.setAttribute('aria-busy', 'false');
+
+        /* 1. Lê e converte o valor do input */
+        var s = parseSal(inp.value);
+
+        /* 2. Valida: isNaN() = "Is Not a Number?"
+              Retorna true se o valor não é um número válido. */
+        if (isNaN(s) || s <= 0) {
+          err.classList.add('vis');
+          inp.style.borderColor = '#d32f2f';
+          inp.setAttribute('aria-invalid', 'true');
+          inp.focus();   /* devolve foco ao campo com erro */
+          return;        /* sai da função — não continua */
+        }
+
+        /* 3. Remove estado de erro */
+        err.classList.remove('vis');
+        inp.style.borderColor = '';
+        inp.setAttribute('aria-invalid', 'false');
+
+        /* 4. Calcula */
+        var ir  = calcularImpostoDue(s);
+        var alq = calcularAliquotaEfetiva(s, ir);
+
+        /* 5. Atualiza a interface (DOM = Document Object Model)
+              textContent: altera o texto de um elemento */
+        document.getElementById('valorImposto').textContent  = 'R$ ' + fmtMoeda(ir);
+        document.getElementById('valorAliquota').textContent = fmtPct(alq);
+
+        /* 6. Preenche tabela de faixas */
+        preencherTabela(s);
+
+        /* 7. Barra de progresso (escala 0% a 27.5%) */
+        var pct = Math.min((alq / 27.5) * 100, 100);
+        document.getElementById('progFill').style.width = pct + '%';
+        document.getElementById('progPct').textContent  = fmtPct(alq);
+        document.querySelector('[role="progressbar"]').setAttribute('aria-valuenow', alq.toFixed(2));
+
+        /* 8. Mostra seção de resultado */
+        var res = document.getElementById('resultado');
+        res.classList.add('vis');
+
+        /* 9. Efeitos visuais */
+        dispararConfete();
+        if (ir === 0) setTimeout(mostrarCarimbo, 450);
+
+        /* 10. Rola suavemente até o resultado */
+        setTimeout(function() {
+          res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+
+      }, 350);
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       PREENCHER TABELA DE RESULTADO
+       ════════════════════════════════════════════════════════
+       Criamos as linhas da tabela via JavaScript (DOM dinâmico)
+       porque os valores só existem depois do cálculo.
+
+       document.createElement('tr') = cria uma nova linha <tr>
+       tbody.appendChild(tr)        = adiciona ao final da tabela
+       ════════════════════════════════════════════════════════ */
+    function preencherTabela(s) {
+      var tbody = document.getElementById('tbodyRes');
+      tbody.innerHTML = '';   /* limpa conteúdo anterior */
+
+      /* Calcula imposto de cada faixa individualmente */
+      var vals = [
+        calcularFaixa1(s), calcularFaixa2(s), calcularFaixa3(s),
+        calcularFaixa4(s), calcularFaixa5(s)
+      ];
+
+      /* Descobre qual faixa o salário atingiu (para destacar) */
+      var fAtiva = 0;
+      for (var i = 0; i < FAIXAS.length; i++) {
+        if (s > (i > 0 ? FAIXAS[i-1].limite : 0)) fAtiva = i;
+      }
+
+      var lims = [
+        'Até R$ 2.259,20', 'Até R$ 2.826,65', 'Até R$ 3.751,05',
+        'Até R$ 4.664,68', 'Acima de R$ 4.664,68'
+      ];
+
+      /* forEach: percorre cada item do array e executa uma função.
+         i = índice (posição), f = o item atual (objeto FAIXAS[i]) */
+      FAIXAS.forEach(function(f, i) {
+        var tr = document.createElement('tr');
+        if (i === fAtiva) tr.classList.add('ativa');   /* destaca faixa atual */
+
+        var marc = (i === fAtiva)
+          ? '<span class="marcador">◀ sua faixa</span>'
+          : '';
+
+        /* innerHTML: define o HTML interno da linha */
+        tr.innerHTML =
+          '<td><span class="pill ' + f.pill + '">' + f.texto + '</span>' + marc + '</td>' +
+          '<td class="mono col-h">' + lims[i] + '</td>' +
+          '<td class="dir" style="color:' + (vals[i] > 0 ? 'var(--color-brand-blue-dark)' : 'var(--color-text-muted)') + ';">' +
+            (vals[i] > 0 ? 'R$ ' + fmtMoeda(vals[i]) : '—') +
+          '</td>';
+
+        tbody.appendChild(tr);
+      });
+
+      /* Linha de total */
+      var tot = vals.reduce(function(acc, v) { return acc + v; }, 0);
+      /*
+        reduce(fn, valorInicial):
+        Percorre o array acumulando um valor.
+        acc = acumulador (começa em 0)
+        v   = valor atual
+        Resultado: soma de todos os valores.
+      */
+      var tt = document.createElement('tr');
+      tt.style.fontWeight = '700';
+      tt.style.borderTop  = '2px solid var(--borda)';
+      tt.innerHTML =
+        '<td colspan="2">Total do Imposto</td>' +
+        '<td class="dir" style="color:var(--color-brand-green-dark);">R$ ' + fmtMoeda(tot) + '</td>';
+      tbody.appendChild(tt);
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       LIMPAR
+       ════════════════════════════════════════════════════════ */
+    function limpar() {
+      pararConfete();
+      document.getElementById('salario').value = '';
+      document.getElementById('salario').style.borderColor = '';
+      document.getElementById('salario').setAttribute('aria-invalid', 'false');
+      document.getElementById('erroInput').classList.remove('vis');
+      document.getElementById('resultado').classList.remove('vis');
+      document.getElementById('progFill').style.width = '0%';
+      document.getElementById('salario').focus();
+      /* focus() devolve o foco ao campo — boa prática de acessibilidade */
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       GERAR PDF — biblioteca jsPDF
+       ════════════════════════════════════════════════════════ */
+    function gerarPDF() {
+      var s   = parseSal(document.getElementById('salario').value);
+      var ir  = calcularImpostoDue(s);
+      var irT = document.getElementById('valorImposto').textContent;
+      var alT = document.getElementById('valorAliquota').textContent;
+
+      var doc = new jspdf.jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      var W = doc.internal.pageSize.getWidth(), M = 20;
+
+      doc.setFillColor(0,48,130);  doc.rect(0,0,W,34,'F');
+      doc.setFillColor(0,156,59);  doc.rect(0,34,W/3,3,'F');
+      doc.setFillColor(255,180,0); doc.rect(W/3,34,W/3,3,'F');
+      doc.setFillColor(0,48,130);  doc.rect(2*W/3,34,W/3,3,'F');
+
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
+      doc.text('SIMULADOR IRPF 2025', M, 14);
+      doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+      doc.text('Receita Federal do Brasil · Cálculo Mensal · Janeiro/2025', M, 22);
+      doc.text('UNICAP · Programação para Web · Vanessa Rafaella', M, 29);
+      doc.text('Emitido em: ' + new Date().toLocaleDateString('pt-BR'), W-M, 29, {align:'right'});
+
+      var y = 46;
+      doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(0,102,51);
+      doc.text('DADOS DE ENTRADA', M, y);
+      doc.setDrawColor(0,102,51); doc.setLineWidth(.3); doc.line(M,y+2,W-M,y+2); y+=10;
+      doc.setTextColor(18,33,58); doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.text('Salário Mensal Bruto:', M, y); doc.setFont('helvetica','bold');
+      doc.text('R$ '+fmtMoeda(s), 90, y); y+=14;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,102,51);
+      doc.text('RESULTADO DO CÁLCULO', M, y); doc.line(M,y+2,W-M,y+2); y+=10;
+      doc.setFillColor(216,245,229); doc.roundedRect(M,y,80,22,3,3,'F');
+      doc.setTextColor(90,106,126); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+      doc.text('IMPOSTO A RECOLHER', M+4, y+8);
+      doc.setTextColor(0,102,51); doc.setFontSize(14); doc.setFont('helvetica','bold');
+      doc.text(irT, M+4, y+18);
+      doc.setFillColor(216,229,245); doc.roundedRect(112,y,80,22,3,3,'F');
+      doc.setTextColor(90,106,126); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+      doc.text('ALÍQUOTA EFETIVA', 116, y+8);
+      doc.setTextColor(0,48,130); doc.setFontSize(14); doc.setFont('helvetica','bold');
+      doc.text(alT, 116, y+18); y+=30;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,102,51);
+      doc.text('DETALHAMENTO POR FAIXA', M, y); doc.line(M,y+2,W-M,y+2); y+=10;
+      doc.setFillColor(0,48,130); doc.rect(M,y,W-2*M,8,'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+      doc.text('Faixa',M+3,y+5.5); doc.text('Alíquota',68,y+5.5);
+      doc.text('Limite',96,y+5.5); doc.text('Imposto na Faixa',190,y+5.5,{align:'right'}); y+=8;
+
+      var vals=[calcularFaixa1(s),calcularFaixa2(s),calcularFaixa3(s),calcularFaixa4(s),calcularFaixa5(s)];
+      var aqT=['Isenta (0%)','7,5%','15%','22,5%','27,5%'];
+      var limT=['Até R$ 2.259,20','Até R$ 2.826,65','Até R$ 3.751,05','Até R$ 4.664,68','Acima de R$ 4.664,68'];
+
+      FAIXAS.forEach(function(f,i){
+        doc.setFillColor(i%2===0?248:241,i%2===0?250:245,i%2===0?252:250);
+        doc.rect(M,y,W-2*M,8,'F');
+        doc.setTextColor(18,33,58); doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+        doc.text(f.label,M+3,y+5.5); doc.text(aqT[i],68,y+5.5); doc.text(limT[i],96,y+5.5);
+        doc.setFont('helvetica','bold');
+        doc.text(vals[i]>0?'R$ '+fmtMoeda(vals[i]):'—',190,y+5.5,{align:'right'}); y+=8;
+      });
+
+      doc.setFillColor(26,115,64); doc.rect(M,y,W-2*M,8,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+      doc.text('TOTAL DO IMPOSTO',M+3,y+5.5); doc.text(irT,190,y+5.5,{align:'right'}); y+=16;
+
+      doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(140,155,170);
+      doc.text('Documento para fins educacionais · UNICAP · Programação para Web · Vanessa Rafaella · Jan/2025', M, y);
+      doc.text('Fonte: Receita Federal do Brasil — www.gov.br/receitafederal', M, y+5);
+
+      doc.save('IRPF_2025_R$' + fmtMoeda(s) + '.pdf');
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       CANVAS API — CONFETE ANIMADO
+       ════════════════════════════════════════════════════════
+       Canvas = "tela em branco" onde desenhamos via JavaScript.
+       Loop de animação:
+       1. Apaga frame anterior (clearRect)
+       2. Atualiza física (posição, rotação)
+       3. Desenha cada partícula
+       4. requestAnimationFrame agenda o próximo frame (~60fps)
+
+       rAF (requestAnimationFrame) vs setInterval:
+       ✓ Sincronizado com o refresh da tela (60fps real)
+       ✓ Pausa quando a aba fica invisível (economiza CPU)
+       ✓ Mais suave, menos uso de bateria no mobile
+       ════════════════════════════════════════════════════════ */
+    var CORES  = ['#2ecc71','#f5a623','#003082','#fff','#ff4444','#ff9900','#00ccff'];
+    var FORMAS = ['rect','circle','tri'];
+    var parts  = [], rafId = null, cvs, ctx2;
+
+    function dispararConfete() {
+      cvs  = document.getElementById('confete');
+      ctx2 = cvs.getContext('2d');   /* pega o "pincel" bidimensional */
+
+      cvs.width  = window.innerWidth;
+      cvs.height = window.innerHeight;
+      cvs.style.display = 'block';
+      parts = [];
+
+      for (var i = 0; i < 130; i++) {
+        parts.push({
+          x:   Math.random() * cvs.width,   /* X aleatório dentro da tela    */
+          y:   Math.random() * -cvs.height, /* Y negativo = começa acima dela */
+          sz:  Math.random() * 10 + 5,      /* tamanho: 5 a 15px              */
+          cor: CORES[Math.floor(Math.random() * CORES.length)],
+          sh:  FORMAS[Math.floor(Math.random() * FORMAS.length)],
+          vy:  Math.random() * 3 + 2,       /* velocidade vertical: 2 a 5     */
+          vx:  Math.random() * 2 - 1,       /* deriva: -1 a 1 (esq ou dir)    */
+          rot: Math.random() * 360,
+          vr:  Math.random() * 6 - 3,
+        });
+      }
+      if (rafId) cancelAnimationFrame(rafId);
+      loopConfete();
+      setTimeout(pararConfete, 3600);
+    }
+
+    function loopConfete() {
+      ctx2.clearRect(0, 0, cvs.width, cvs.height); /* apaga frame anterior */
+      var fora = true;
+
+      parts.forEach(function(p) {
+        /* Física: atualiza posição e rotação */
+        p.y += p.vy;
+        p.x += p.vx;
+        p.rot += p.vr;
+        if (p.y < cvs.height + 20) fora = false;
+
+        /* save/restore: isolam o estado de cada partícula
+           (rotação de uma não afeta as outras) */
+        ctx2.save();
+        ctx2.translate(p.x, p.y);              /* move origem para a partícula */
+        ctx2.rotate(p.rot * Math.PI / 180);    /* graus → radianos (×π/180)    */
+        ctx2.fillStyle = p.cor;
+        ctx2.globalAlpha = .9;
+
+        if      (p.sh === 'rect')   { ctx2.fillRect(-p.sz/2, -p.sz/4, p.sz, p.sz/2); }
+        else if (p.sh === 'circle') { ctx2.beginPath(); ctx2.arc(0,0,p.sz/2,0,Math.PI*2); ctx2.fill(); }
+        else {
+          ctx2.beginPath();
+          ctx2.moveTo(0, -p.sz/2);       /* topo */
+          ctx2.lineTo(p.sz/2, p.sz/2);   /* baixo direita */
+          ctx2.lineTo(-p.sz/2, p.sz/2);  /* baixo esquerda */
+          ctx2.closePath();
+          ctx2.fill();
+        }
+        ctx2.restore();
+      });
+
+      if (!fora) rafId = requestAnimationFrame(loopConfete);
+      else       pararConfete();
+    }
+
+    function pararConfete() {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (cvs)   { cvs.style.display = 'none'; ctx2.clearRect(0,0,cvs.width,cvs.height); }
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       CARIMBO ISENTO
+       ════════════════════════════════════════════════════════ */
+    function mostrarCarimbo() {
+      var el = document.getElementById('carimbo');
+      el.classList.add('ativo');
+      setTimeout(function() {
+        el.style.transition = 'opacity .5s ease';
+        el.style.opacity = '0';
+        setTimeout(function() {
+          el.classList.remove('ativo');
+          el.style.opacity = '';
+          el.style.transition = '';
+        }, 500);
+      }, 2000);
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       ACORDEÃO — toggleAcord(header)
+       ════════════════════════════════════════════════════════
+       Lógica:
+       1. Guarda se estava aberto (antes de fechar tudo)
+       2. Fecha TODOS os acordeões
+       3. Se estava fechado → abre o clicado
+
+       nextElementSibling = próximo elemento irmão no HTML.
+       Como .acord-body vem sempre logo após .acord-header,
+       isso sempre pega o corpo correto.
+       ════════════════════════════════════════════════════════ */
+    function toggleAcord(header) {
+      var body   = header.nextElementSibling;
+      var aberto = header.classList.contains('aberto');
+      /* classList.contains: verifica se a classe existe → true/false */
+
+      /* Fecha todos os que estiverem abertos */
+      document.querySelectorAll('.acord-header.aberto')
+        .forEach(function(h) {
+          h.classList.remove('aberto');
+          h.setAttribute('aria-expanded', 'false');
+          h.nextElementSibling.classList.remove('aberto');
+        });
+
+      /* ! = NOT: inverte boolean.
+         Se aberto=true → !aberto=false → não entra (já fechou acima)
+         Se aberto=false → !aberto=true → entra e abre */
+      if (!aberto) {
+        header.classList.add('aberto');
+        header.setAttribute('aria-expanded', 'true');
+        body.classList.add('aberto');
+      }
+    }
+
+
+    /* ════════════════════════════════════════════════════════
+       EVENTOS — Reagindo às ações do usuário
+       ════════════════════════════════════════════════════════
+       addEventListener(evento, função):
+       "Escuta" por um tipo de evento e executa a função ao ocorrer.
+       ════════════════════════════════════════════════════════ */
+
+    /* Filtra caracteres inválidos enquanto o usuário digita */
+    document.getElementById('salario').addEventListener('input', function(e) {
+      /* /[^\d,\.]/g = regex: remove tudo que NÃO for dígito, vírgula ou ponto
+         \d = dígito | , = vírgula | \. = ponto literal | g = global (todos)  */
+      e.target.value = e.target.value.replace(/[^\d,\.]/g, '');
+    });
+
+    /* Enter no campo de salário aciona o cálculo */
+    document.getElementById('salario').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') calcular();
+    });
+
+    /* Suporte a teclado nos acordeões (Enter e Espaço) */
+    document.querySelectorAll('.acord-header').forEach(function(h) {
+      h.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();   /* impede espaço de rolar a página */
+          toggleAcord(h);
+        }
+      });
+    });
+
+  </script>
+</body>
+</html>
