@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>SIMEDB — Roteiro AV05 (5 min)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue:     #4A95C2;
+      --blue-d:   #1B4965;
+      --blue-l:   #7AB5D8;
+      --green:    #4CAF82;
+      --green-d:  #2E8A5A;
+      --yellow:   #F5C842;
+      --red:      #E05A4A;
+      --bg:       #0B1822;
+      --surface:  #122430;
+      --surface2: #1A3142;
+      --border:   rgba(255,255,255,.08);
+      --text:     #FBF7F1;
+      --muted:    rgba(251,247,241,.55);
+      --dim:      rgba(251,247,241,.3);
+      --ff: 'Poppins', sans-serif;
+      --fi: 'Inter', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; width: 100%; overflow: hidden; }
+    body {
+      font-family: var(--ff);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    /* ── START SCREEN ── */
+    #start-screen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: var(--bg);
+      z-index: 200;
+      padding: 2rem;
+      text-align: center;
+    }
+    .start-logo {
+      font-size: 2rem; font-weight: 800;
+      color: var(--text); letter-spacing: -.03em;
+      margin-bottom: .5rem;
+    }
+    .start-logo span { color: var(--blue); }
+    .start-sub {
+      font-family: var(--fi);
+      font-size: .9rem; color: var(--muted);
+      margin-bottom: 2.5rem; line-height: 1.6;
+      max-width: 340px;
+    }
+    .start-info {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: .75rem; margin-bottom: 2.5rem; width: 100%; max-width: 360px;
+    }
+    .start-info-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: .9rem .5rem;
+      text-align: center;
+    }
+    .si-num { font-size: 1.5rem; font-weight: 800; color: var(--blue); letter-spacing: -.02em; line-height: 1; }
+    .si-lbl { font-family: var(--fi); font-size: .65rem; color: var(--muted); margin-top: .25rem; }
+    .btn-start {
+      width: 100%; max-width: 360px;
+      padding: 1.1rem;
+      background: var(--blue);
+      border-radius: 999px; border: none;
+      font-family: var(--ff); font-size: 1rem; font-weight: 700;
+      color: white; cursor: pointer;
+      box-shadow: 0 6px 24px rgba(74,149,194,.4);
+      transition: all .2s;
+    }
+    .btn-start:hover { background: var(--blue-d); transform: translateY(-1px); }
+    .start-tip {
+      margin-top: 1.25rem;
+      font-family: var(--fi); font-size: .75rem; color: var(--dim);
+      display: flex; align-items: center; gap: .4rem;
+      max-width: 340px; text-align: center;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    #presenter {
+      display: none;
+      height: 100vh;
+      flex-direction: column;
+    }
+    #presenter.visible { display: flex; }
+
+    /* ── GLOBAL TIMER BAR ── */
+    .timer-bar-wrap {
+      flex-shrink: 0;
+      height: 5px;
+      background: var(--surface2);
+      position: relative;
+    }
+    .timer-bar-fill {
+      position: absolute; top: 0; left: 0; height: 100%;
+      background: var(--green);
+      transition: width .5s linear, background .5s;
+    }
+
+    /* ── TOP ROW ── */
+    .top-row {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .85rem 1.25rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .slide-indicator { display: flex; align-items: center; gap: .5rem; }
+    .slide-dots { display: flex; gap: 4px; }
+    .sdot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--border); transition: all .3s;
+    }
+    .sdot.done    { background: var(--green); }
+    .sdot.current { background: var(--blue); width: 18px; border-radius: 3px; }
+    .sdot.future  { background: rgba(255,255,255,.15); }
+    .slide-fraction {
+      font-family: var(--fi); font-size: .75rem;
+      color: var(--muted); font-weight: 500;
+    }
+
+    /* ── GLOBAL CLOCK ── */
+    .global-clock { display: flex; align-items: center; gap: .5rem; }
+    .clock-display {
+      font-family: 'Courier New', monospace;
+      font-size: 1.375rem; font-weight: 700;
+      letter-spacing: .05em;
+      transition: color .3s;
+    }
+    .clock-display.ok     { color: var(--green); }
+    .clock-display.warn   { color: var(--yellow); }
+    .clock-display.danger { color: var(--red); animation: flash .5s ease-in-out infinite; }
+    @keyframes flash { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .btn-pause {
+      width: 32px; height: 32px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted); transition: all .2s;
+    }
+    .btn-pause:hover { background: rgba(255,255,255,.08); color: var(--text); }
+    .btn-pause svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── SLIDE HEADER ── */
+    .slide-head {
+      flex-shrink: 0;
+      padding: .85rem 1.25rem .6rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .slide-meta { display: flex; flex-direction: column; gap: .15rem; }
+    .slide-number {
+      font-family: var(--fi); font-size: .65rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--blue);
+    }
+    .slide-name {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); letter-spacing: -.01em;
+    }
+    .slide-timer-box {
+      display: flex; flex-direction: column; align-items: flex-end; gap: .15rem;
+    }
+    .slide-time-label {
+      font-family: var(--fi); font-size: .6rem; font-weight: 600;
+      color: var(--muted); letter-spacing: .06em; text-transform: uppercase;
+    }
+    .slide-time-val {
+      font-family: 'Courier New', monospace;
+      font-size: 1.125rem; font-weight: 700;
+      color: var(--blue-l);
+    }
+
+    /* ── SLIDE PROGRESS BAR (mini) ── */
+    .slide-prog-wrap {
+      flex-shrink: 0;
+      height: 3px; background: var(--surface2);
+      position: relative;
+    }
+    .slide-prog-fill {
+      position: absolute; top: 0; left: 0; height: 100%;
+      background: linear-gradient(90deg, var(--blue-d), var(--blue));
+      transition: width .5s linear;
+    }
+
+    /* ── SCRIPT AREA ── */
+    .script-area {
+      flex: 1;
+      overflow-y: auto; overflow-x: hidden;
+      padding: 1rem 1.25rem 1rem;
+    }
+    .script-area::-webkit-scrollbar { width: 3px; }
+    .script-area::-webkit-scrollbar-track { background: transparent; }
+    .script-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+    .script-label {
+      font-family: var(--fi); font-size: .65rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--blue); margin-bottom: .75rem;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .script-label::after { content: ''; flex: 1; height: 1px; background: rgba(74,149,194,.2); }
+
+    .script-text {
+      font-family: var(--fi);
+      font-size: 1.0625rem;
+      line-height: 1.75;
+      color: var(--text);
+      font-weight: 400;
+    }
+    .script-text .hl {
+      color: var(--blue-l);
+      font-weight: 600;
+    }
+    .script-text .stat {
+      display: inline-block;
+      background: rgba(74,149,194,.14);
+      border: 1px solid rgba(74,149,194,.25);
+      border-radius: 6px;
+      padding: .05rem .4rem;
+      color: var(--blue-l);
+      font-weight: 700;
+      font-size: .95em;
+    }
+    .script-text .pause {
+      display: inline-flex; align-items: center; gap: .3rem;
+      color: var(--yellow); font-size: .85em;
+      font-weight: 600; font-style: italic;
+    }
+    .script-text .pause::before { content: '⏸'; font-style: normal; }
+
+    /* code block inside script */
+    .script-text code {
+      font-family: 'Courier New', monospace;
+      background: rgba(0,0,0,.35);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .1rem .35rem;
+      font-size: .85em;
+      color: #B8895C;
+    }
+
+    /* talking points */
+    .points {
+      margin-top: 1rem;
+      display: flex; flex-direction: column; gap: .6rem;
+    }
+    .point { display: flex; gap: .75rem; align-items: flex-start; }
+    .point-bullet {
+      width: 22px; height: 22px; flex-shrink: 0;
+      background: rgba(74,149,194,.12);
+      border: 1px solid rgba(74,149,194,.25);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .65rem; font-weight: 700; color: var(--blue);
+      margin-top: 1px;
+    }
+    .point-text {
+      font-family: var(--fi); font-size: .9rem;
+      color: rgba(251,247,241,.82); line-height: 1.55;
+    }
+    .point-text strong { color: var(--text); font-weight: 600; }
+
+    /* action box — coisas a fazer no PC */
+    .action-box {
+      margin-top: 1rem;
+      background: rgba(184,137,92,.1);
+      border: 1px solid rgba(184,137,92,.3);
+      border-radius: 10px;
+      padding: .75rem .9rem;
+    }
+    .action-title {
+      font-family: var(--fi); font-size: .65rem; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: #B8895C; margin-bottom: .5rem;
+      display: flex; align-items: center; gap: .4rem;
+    }
+    .action-list {
+      font-family: var(--fi); font-size: .82rem;
+      color: rgba(251,247,241,.85); line-height: 1.6;
+      padding-left: 1rem;
+    }
+    .action-list li { margin-bottom: .25rem; }
+
+    /* alert box */
+    .alert-box {
+      margin-top: 1rem;
+      padding: .75rem 1rem;
+      border-radius: 10px;
+      display: flex; gap: .6rem; align-items: flex-start;
+    }
+    .alert-box.tip  { background: rgba(76,175,130,.1); border: 1px solid rgba(76,175,130,.2); }
+    .alert-box.warn { background: rgba(245,200,66,.08); border: 1px solid rgba(245,200,66,.2); }
+    .alert-icon { font-size: 1rem; flex-shrink: 0; margin-top: .05rem; }
+    .alert-text { font-family: var(--fi); font-size: .8rem; color: var(--muted); line-height: 1.5; }
+    .alert-text strong { color: var(--text); font-weight: 600; }
+
+    /* ── BOTTOM CONTROLS ── */
+    .controls {
+      flex-shrink: 0;
+      padding: .75rem 1.25rem 1.5rem;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: .6rem;
+      align-items: center;
+    }
+    .btn-nav {
+      padding: .75rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: var(--ff); font-size: .8125rem; font-weight: 600;
+      color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: .4rem;
+      transition: all .2s;
+    }
+    .btn-nav:hover:not(:disabled) { background: rgba(255,255,255,.06); color: var(--text); }
+    .btn-nav:disabled { opacity: .3; pointer-events: none; }
+    .btn-nav svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .btn-next-big {
+      padding: .85rem;
+      background: var(--blue);
+      border: none;
+      border-radius: 12px;
+      font-family: var(--ff); font-size: .9rem; font-weight: 700;
+      color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      box-shadow: 0 4px 16px rgba(74,149,194,.35);
+      transition: all .2s;
+    }
+    .btn-next-big:hover { background: var(--blue-d); transform: translateY(-1px); }
+    .btn-next-big:disabled { background: var(--surface2); color: var(--muted); box-shadow: none; transform: none; pointer-events: none; }
+    .btn-next-big svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── FINISH SCREEN ── */
+    #finish-screen {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 2rem;
+    }
+    .finish-emoji { font-size: 4rem; margin-bottom: 1rem; }
+    .finish-title {
+      font-size: 1.75rem; font-weight: 800;
+      color: var(--text); letter-spacing: -.02em;
+      margin-bottom: .5rem; line-height: 1.2;
+    }
+    .finish-title span { color: var(--blue); }
+    .finish-sub {
+      font-family: var(--fi); font-size: .9rem;
+      color: var(--muted); margin-bottom: 2rem;
+      line-height: 1.6; max-width: 320px;
+    }
+    .finish-time-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.25rem 2rem;
+      margin-bottom: 2rem;
+    }
+    .ft-label { font-family: var(--fi); font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: .35rem; }
+    .ft-time { font-family: 'Courier New', monospace; font-size: 2.5rem; font-weight: 700; color: var(--blue); }
+    .btn-restart {
+      width: 100%; max-width: 300px;
+      padding: .9rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: var(--ff); font-size: .9rem; font-weight: 600;
+      color: var(--text); cursor: pointer; transition: all .2s;
+    }
+    .btn-restart:hover { background: rgba(255,255,255,.06); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ START SCREEN ═══════════ -->
+<div id="start-screen">
+  <div class="start-logo">SIM<span>EDB</span></div>
+  <p class="start-sub">Roteiro de apresentação para 5 minutos. Avance a cada slide e siga o script na tela. Você pode usar o celular como teleprompter enquanto apresenta no PC.</p>
+
+  <div class="start-info">
+    <div class="start-info-box">
+      <div class="si-num">7</div>
+      <div class="si-lbl">slides</div>
+    </div>
+    <div class="start-info-box">
+      <div class="si-num">5:00</div>
+      <div class="si-lbl">minutos</div>
+    </div>
+    <div class="start-info-box">
+      <div class="si-num">~43s</div>
+      <div class="si-lbl">por slide</div>
+    </div>
+  </div>
+
+  <button class="btn-start" onclick="startPresentation()">
+    ▶ Iniciar apresentação
+  </button>
+  <div class="start-tip">
+    💡 Antes de começar: abra o DBeaver conectado, o arquivo simedb.sql e o diagrama ER em abas/janelas separadas
+  </div>
+</div>
+
+<!-- ═══════════ PRESENTER ═══════════ -->
+<div id="presenter">
+
+  <div class="timer-bar-wrap">
+    <div class="timer-bar-fill" id="global-bar" style="width:100%"></div>
+  </div>
+
+  <div class="top-row">
+    <div class="slide-indicator">
+      <div class="slide-dots" id="slide-dots"></div>
+      <span class="slide-fraction" id="slide-fraction">1 / 7</span>
+    </div>
+    <div class="global-clock">
+      <div class="clock-display ok" id="clock">5:00</div>
+      <div class="btn-pause" id="btn-pause" onclick="togglePause()">
+        <svg id="pause-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide-head">
+    <div class="slide-meta">
+      <span class="slide-number" id="slide-number">Slide 01</span>
+      <span class="slide-name" id="slide-name">Abertura</span>
+    </div>
+    <div class="slide-timer-box">
+      <span class="slide-time-label">Tempo ideal</span>
+      <span class="slide-time-val" id="slide-alloc">0:25</span>
+    </div>
+  </div>
+
+  <div class="slide-prog-wrap">
+    <div class="slide-prog-fill" id="slide-bar" style="width:0%"></div>
+  </div>
+
+  <div class="script-area" id="script-area"></div>
+
+  <div class="controls">
+    <button class="btn-nav" id="btn-prev" onclick="prevSlide()">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      Voltar
+    </button>
+    <button class="btn-next-big" id="btn-next" onclick="nextSlide()">
+      Próximo slide
+      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <button class="btn-nav" id="btn-finish" onclick="endPresentation()" style="display:none">
+      Finalizar ✓
+    </button>
+    <div style="display:none" id="spacer-right"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════ FINISH SCREEN ═══════════ -->
+<div id="finish-screen" style="display:none">
+  <div class="finish-emoji">🎓</div>
+  <div class="finish-title">Apresentação<br><span>concluída!</span></div>
+  <p class="finish-sub">Você fez um semestre inteiro de Banco de Dados sozinha. Agora é só responder com calma se a banca perguntar algo.</p>
+  <div class="finish-time-box">
+    <div class="ft-label">Tempo total utilizado</div>
+    <div class="ft-time" id="finish-time">—</div>
+  </div>
+  <button class="btn-restart" onclick="restart()">↩ Recomeçar do início</button>
+</div>
+
+<script>
+  // ── SLIDE DATA
+  const slides = [
+    {
+      number: '01',
+      name: 'Abertura — Quem sou e o que vou mostrar',
+      alloc: 25,
+      script: `
+        <div class="script-label">Fala de abertura</div>
+        <div class="script-text">
+          <span class="pause">pausa de 2 segundos antes de falar, respira</span><br><br>
+          "Boa tarde, professor. Meu nome é <span class="hl">Vanessa Rafaella</span> e vou apresentar o projeto que desenvolvi ao longo do semestre na disciplina de Banco de Dados.<br><br>
+          O sistema se chama <span class="hl">SIMEDB</span> — <span class="hl">Sistema de Monitoramento e Gestão de Dados da Educação Básica</span>, e vou seguir a ordem das atividades: AV01, AV02, AV03 e AV04, terminando com uma demonstração prática do banco e das consultas em funcionamento."
+        </div>
+        <div class="alert-box tip">
+          <span class="alert-icon">💡</span>
+          <div class="alert-text"><strong>Dica:</strong> fale devagar, postura aberta. Não precisa dizer que fez sozinha logo de cara — isso fica natural ao longo da fala.</div>
+        </div>
+      `
+    },
+    {
+      number: '02',
+      name: 'AV01 — Minimundo (o problema que o SIMEDB resolve)',
+      alloc: 40,
+      script: `
+        <div class="script-label">Contextualização do projeto</div>
+        <div class="script-text">
+          "Comecei pelo <span class="hl">minimundo</span>: a ideia é apoiar o monitoramento da <span class="hl">ODS 4 da ONU</span> — educação de qualidade — armazenando dados de escolas da educação básica em Pernambuco.<br><br>
+          O sistema precisa registrar <span class="hl">escolas</span>, sua infraestrutura, <span class="hl">turmas</span>, <span class="hl">alunos</span> matriculados, <span class="hl">docentes</span> que lecionam, <span class="hl">gestores</span> que administram, e <span class="hl">indicadores educacionais</span> como taxa de aprovação e evasão.<br><br>
+          A motivação é prática: dados confiáveis ajudam gestores públicos a identificar escolas que precisam de mais investimento e a acompanhar metas da ODS 4."
+        </div>
+        <div class="action-box">
+          <div class="action-title">📺 No PC, mostrar:</div>
+          <ol class="action-list">
+            <li>Abrir o documento da <strong>AV01 (minimundo)</strong> no Word</li>
+            <li>Rolar mostrando os requisitos principais — sem ler tudo, só os títulos</li>
+          </ol>
+        </div>
+        <div class="alert-box tip">
+          <span class="alert-icon">💡</span>
+          <div class="alert-text"><strong>Frase de transição forte:</strong> "Com o minimundo definido, parti para a modelagem."</div>
+        </div>
+      `
+    },
+    {
+      number: '03',
+      name: 'AV02 — Modelo Conceitual e Físico',
+      alloc: 60,
+      script: `
+        <div class="script-label">Da ideia para o modelo</div>
+        <div class="script-text">
+          "Na AV02 transformei o minimundo em dois modelos.<br><br>
+          No <span class="hl">modelo conceitual</span> identifiquei <span class="stat">11 entidades</span> e os relacionamentos entre elas. Trabalhei conceitos importantes:<br><br>
+          • <span class="hl">Especialização</span> — Pessoa se especializa em Aluno, Docente e Gestor.<br>
+          • <span class="hl">Entidade fraca</span> — Indicador_Educacional depende de Escola.<br>
+          • <span class="hl">Atributo multivalorado</span> — Telefone virou tabela própria.<br>
+          • <span class="hl">Entidade associativa</span> — Matrícula liga Aluno e Turma.<br>
+          • <span class="hl">Relacionamento N para N</span> — Leciona entre Docente e Turma.<br><br>
+          Depois mapeei tudo para o <span class="hl">modelo físico</span>, definindo tipos, chaves, restrições, prontas para virar tabelas."
+        </div>
+        <div class="action-box">
+          <div class="action-title">📺 No PC, mostrar:</div>
+          <ol class="action-list">
+            <li>Abrir o <strong>documento da AV02</strong></li>
+            <li>Mostrar o <strong>diagrama ER conceitual</strong> (rolar com calma)</li>
+            <li>Mostrar o <strong>modelo físico</strong> em seguida</li>
+          </ol>
+        </div>
+        <div class="alert-box warn">
+          <span class="alert-icon">⏱</span>
+          <div class="alert-text"><strong>Slide longo (60s).</strong> Não acelere. Aponte para cada conceito no diagrama enquanto fala.</div>
+        </div>
+      `
+    },
+    {
+      number: '04',
+      name: 'AV03 — Implementação SQL no PostgreSQL',
+      alloc: 50,
+      script: `
+        <div class="script-label">Da teoria para o banco real</div>
+        <div class="script-text">
+          "Na AV03 implementei o modelo físico em <span class="hl">SQL puro</span>, escrito à mão, sem usar nenhuma ferramenta de modelagem para exportar. O script criou as <span class="stat">11 tabelas</span>, com todas as <span class="hl">chaves primárias</span>, <span class="hl">estrangeiras</span> e <span class="hl">constraints</span> (CHECK, UNIQUE, NOT NULL).<br><br>
+          Hospedei o banco no <span class="hl">PostgreSQL do Render</span>, na nuvem, e populei com dados de exemplo: <span class="stat">3 escolas</span>, <span class="stat">15 pessoas</span>, <span class="stat">6 turmas</span>, <span class="stat">10 matrículas</span> e <span class="stat">9 indicadores</span> educacionais.<br><br>
+          O banco está <span class="hl">rodando agora, ao vivo</span>, conectado pelo DBeaver."
+        </div>
+        <div class="action-box">
+          <div class="action-title">🎬 Demonstração ao vivo (parte 1):</div>
+          <ol class="action-list">
+            <li>Abrir o <strong>DBeaver</strong> já conectado ao Render</li>
+            <li>Expandir <strong>public → Tables</strong> e mostrar as <strong>11 tabelas</strong></li>
+            <li>Duplo clique em <code>escola</code> → aba <strong>Data</strong> (mostra as 3 escolas)</li>
+            <li>Botão direito em <strong>public</strong> → <strong>View Diagram</strong> (diagrama ER gerado automaticamente)</li>
+          </ol>
+        </div>
+        <div class="alert-box tip">
+          <span class="alert-icon">💡</span>
+          <div class="alert-text"><strong>Frase de impacto:</strong> "Esse diagrama foi gerado automaticamente pelo banco — é a prova que a modelagem virou banco real."</div>
+        </div>
+      `
+    },
+    {
+      number: '05',
+      name: 'AV04 — Consultas SQL ao vivo',
+      alloc: 70,
+      script: `
+        <div class="script-label">Demonstração prática das consultas</div>
+        <div class="script-text">
+          "Na AV04 desenvolvi <span class="hl">4 consultas SQL</span> que extraem informações úteis do banco. Vou rodar uma delas ao vivo agora.<br><br>
+          A consulta combina <span class="hl">JOIN</span> entre <span class="hl">escola</span> e <span class="hl">indicador_educacional</span>, usa <span class="hl">WHERE</span> para filtrar, e <span class="hl">GROUP BY</span> com função de agregação para comparar a <span class="hl">taxa média de aprovação</span> entre escolas <span class="hl">municipais</span> e <span class="hl">estaduais</span>.<br><br>
+          O resultado mostra que a escola municipal apresenta <span class="stat">92,5%</span> de aprovação, enquanto as estaduais ficam em <span class="stat">83,15%</span> — e uma escola rural, sem internet, puxa essa média para baixo."
+        </div>
+        <div class="action-box">
+          <div class="action-title">🎬 Demonstração ao vivo (parte 2):</div>
+          <ol class="action-list">
+            <li>No DBeaver: <strong>SQL Editor → New SQL Editor</strong> (Cmd+])</li>
+            <li>Colar a <strong>Consulta 4</strong> (taxa de aprovação por dependência)</li>
+            <li>Selecionar e apertar <strong>Cmd+Enter</strong></li>
+            <li>Mostrar o resultado na grade embaixo</li>
+            <li>Se sobrar tempo: rodar também a <strong>Consulta 1</strong> (escolas sem infraestrutura)</li>
+          </ol>
+        </div>
+        <div class="alert-box warn">
+          <span class="alert-icon">⏱</span>
+          <div class="alert-text"><strong>Slide mais longo (70s).</strong> Demo ao vivo pode dar imprevisto — se o Render demorar a responder (banco free hiberna), avise calmamente: "Está acordando o banco, um momento."</div>
+        </div>
+      `
+    },
+    {
+      number: '06',
+      name: 'Reflexão técnica e aprendizados',
+      alloc: 35,
+      script: `
+        <div class="script-label">O que aprendi no processo</div>
+        <div class="script-text">
+          "Saindo da parte técnica, queria fechar com o aprendizado.<br><br>
+          Esse projeto me obrigou a percorrer <span class="hl">o ciclo completo de banco de dados</span> — do levantamento de requisitos até a consulta em produção. <span class="pause">pausa curta</span><br><br>
+          Aprendi na prática que o trabalho do <span class="hl">DBA</span> não é só escrever <code>CREATE TABLE</code>: é entender o problema, modelar com cuidado, escolher os tipos certos, garantir <span class="hl">integridade</span> com constraints, e expor os dados em <span class="hl">consultas que respondem perguntas reais</span>.<br><br>
+          Outro aprendizado importante: trabalhar com <span class="hl">banco em nuvem</span>, conexão SSL, JDBC — habilidades que vou levar para o mercado."
+        </div>
+        <div class="alert-box tip">
+          <span class="alert-icon">💡</span>
+          <div class="alert-text"><strong>Se quiser comentar sobre fazer sozinha:</strong> aqui é o momento. Algo como "tive desafios no caminho, inclusive a equipe se desfez, mas decidi entregar tudo individualmente — e aprendi muito mais por causa disso."</div>
+        </div>
+      `
+    },
+    {
+      number: '07',
+      name: 'Encerramento',
+      alloc: 25,
+      script: `
+        <div class="script-label">Fechamento</div>
+        <div class="script-text">
+          "Para fechar: o SIMEDB é mais do que uma entrega acadêmica — é um exercício de <span class="hl">como a tecnologia pode apoiar políticas públicas de educação</span>.<br><br>
+          <span class="pause">pausa final</span><br><br>
+          O banco está rodando, as consultas funcionam, e a modelagem reflete fielmente o minimundo proposto.<br><br>
+          <span class="hl">Obrigada</span> pela atenção. Estou à disposição para perguntas."
+        </div>
+        <div class="points">
+          <div class="point">
+            <div class="point-bullet">→</div>
+            <div class="point-text">Manter o DBeaver aberto, com a tabela <strong>escola</strong> ou o <strong>diagrama ER</strong> visível para perguntas</div>
+          </div>
+          <div class="point">
+            <div class="point-bullet">→</div>
+            <div class="point-text"><strong>Não tenha pressa na última frase.</strong> Sorria. Mantenha contato visual.</div>
+          </div>
+        </div>
+        <div class="alert-box tip">
+          <span class="alert-icon">🎯</span>
+          <div class="alert-text"><strong>Se a banca perguntar sobre escolhas técnicas:</strong> tenha na manga "por que tabelas separadas para especialização" (flexibilidade e integridade referencial) e "por que telefone como tabela" (atributo multivalorado precisa de tabela própria na 1FN).</div>
+        </div>
+      `
+    }
+  ];
+
+  // ── STATE
+  let currentSlide = 0;
+  let totalSeconds = 300; // 5:00
+  let elapsed      = 0;
+  let paused       = false;
+  let timer        = null;
+  let slideElapsed = 0;
+  let startTs      = null;
+  let totalUsed    = 0;
+
+  const dotsEl = document.getElementById('slide-dots');
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'sdot future';
+    dotsEl.appendChild(d);
+  });
+
+  function startPresentation() {
+    document.getElementById('start-screen').style.display = 'none';
+    const pres = document.getElementById('presenter');
+    pres.style.display = 'flex';
+    pres.classList.add('visible');
+    renderSlide(0);
+    startTimer();
+  }
+
+  function startTimer() {
+    startTs = Date.now();
+    timer = setInterval(() => {
+      if (paused) return;
+      elapsed = Math.floor((Date.now() - startTs) / 1000);
+      slideElapsed++;
+      updateClock();
+      updateBars();
+    }, 1000);
+  }
+
+  function togglePause() {
+    paused = !paused;
+    const icon = document.getElementById('pause-icon');
+    if (paused) {
+      icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+    } else {
+      icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    }
+  }
+
+  function updateClock() {
+    const remaining = Math.max(0, totalSeconds - elapsed);
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    const str = m + ':' + String(s).padStart(2, '0');
+    const el = document.getElementById('clock');
+    el.textContent = str;
+    if (remaining > 90)       { el.className = 'clock-display ok'; }
+    else if (remaining > 30)  { el.className = 'clock-display warn'; }
+    else                      { el.className = 'clock-display danger'; }
+    if (remaining === 0) { endPresentation(); }
+  }
+
+  function updateBars() {
+    const pct = Math.max(0, ((totalSeconds - elapsed) / totalSeconds) * 100);
+    const gb = document.getElementById('global-bar');
+    gb.style.width = pct + '%';
+    if (pct > 40) gb.style.background = 'var(--green)';
+    else if (pct > 15) gb.style.background = 'var(--yellow)';
+    else gb.style.background = 'var(--red)';
+
+    const alloc = slides[currentSlide].alloc;
+    const slidePct = Math.min(100, (slideElapsed / alloc) * 100);
+    document.getElementById('slide-bar').style.width = slidePct + '%';
+  }
+
+  function renderSlide(idx) {
+    const s = slides[idx];
+    document.getElementById('slide-number').textContent = 'Slide ' + s.number;
+    document.getElementById('slide-name').textContent   = s.name;
+    document.getElementById('slide-fraction').textContent = (idx + 1) + ' / ' + slides.length;
+    const m = Math.floor(s.alloc / 60);
+    const sec = s.alloc % 60;
+    document.getElementById('slide-alloc').textContent = m + ':' + String(sec).padStart(2,'0');
+    document.getElementById('script-area').innerHTML = s.script;
+
+    document.querySelectorAll('.sdot').forEach((d, i) => {
+      d.className = 'sdot ' + (i < idx ? 'done' : i === idx ? 'current' : 'future');
+    });
+
+    document.getElementById('btn-prev').disabled = idx === 0;
+    const isLast = idx === slides.length - 1;
+    document.getElementById('btn-next').style.display = isLast ? 'none' : 'flex';
+    document.getElementById('btn-next').disabled = isLast;
+    document.getElementById('btn-finish').style.display = isLast ? 'flex' : 'none';
+    document.getElementById('spacer-right').style.display = isLast ? 'none' : 'block';
+
+    slideElapsed = 0;
+    document.getElementById('slide-bar').style.width = '0%';
+    document.getElementById('script-area').scrollTop = 0;
+  }
+
+  function nextSlide() {
+    if (currentSlide < slides.length - 1) {
+      currentSlide++;
+      renderSlide(currentSlide);
+    }
+  }
+
+  function prevSlide() {
+    if (currentSlide > 0) {
+      currentSlide--;
+      renderSlide(currentSlide);
+    }
+  }
+
+  function endPresentation() {
+    clearInterval(timer);
+    totalUsed = elapsed;
+    const m = Math.floor(totalUsed / 60);
+    const s = totalUsed % 60;
+    document.getElementById('finish-time').textContent = m + ':' + String(s).padStart(2,'0');
+    document.getElementById('finish-screen').style.display = 'flex';
+  }
+
+  function restart() {
+    clearInterval(timer);
+    currentSlide = 0; elapsed = 0; slideElapsed = 0; paused = false;
+    document.getElementById('finish-screen').style.display = 'none';
+    document.getElementById('clock').textContent = '5:00';
+    document.getElementById('clock').className = 'clock-display ok';
+    document.getElementById('global-bar').style.width = '100%';
+    document.getElementById('pause-icon').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    renderSlide(0);
+    startTimer();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+    if (e.key === 'ArrowLeft') prevSlide();
+    if (e.key === 'p' || e.key === 'P') togglePause();
+  });
+  let _tx = 0;
+  document.addEventListener('touchstart', e => _tx = e.touches[0].clientX, {passive:true});
+  document.addEventListener('touchend', e => {
+    const dx = _tx - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 60) { dx > 0 ? nextSlide() : prevSlide(); }
+  });
+</script>
+</body>
+</html>
